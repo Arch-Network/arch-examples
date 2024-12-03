@@ -12,6 +12,7 @@ use crate::{
     },
     ELF_PATH,
 };
+
 #[ignore]
 #[serial]
 #[test]
@@ -19,15 +20,15 @@ fn counter_initialization_test() {
     init_logging();
 
     log_scenario_start(1,
-        &"Program Deployment & Counter Initialization".to_string(),
-        &"Happy Path Scenario : deploying the counter program, then initializing the counter to (1,1) ".to_string()
+        "Program Deployment & Counter Initialization",
+        "Happy Path Scenario : deploying the counter program, then initializing the counter to (1,1) "
     );
 
     let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
 
     start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    log_scenario_end(1, &format!(""));
+    log_scenario_end(1, "");
 }
 
 #[ignore]
@@ -37,8 +38,8 @@ fn counter_init_and_inc_test() {
     init_logging();
 
     log_scenario_start(2,
-        &"Counter Initialization and Increase ( Two overlapping states, in two separate blocks )".to_string(),
-        &"Happy Path Scenario : Initializing the counter to (1,1), then increasing it in a separate block ".to_string()
+        "Counter Initialization and Increase ( Two overlapping states, in two separate blocks )",
+        "Happy Path Scenario : Initializing the counter to (1,1), then increasing it in a separate block "
     );
 
     let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
@@ -68,8 +69,8 @@ fn counter_init_and_inc_transaction_test() {
     init_logging();
 
     log_scenario_start(3,
-        &"Counter Initialization and Increase ( Two overlapping states, in the same transaction )".to_string(),
-        &"Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same transaction, using two separate instructions".to_string()
+        "Counter Initialization and Increase ( Two overlapping states, in the same transaction )",
+        "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same transaction, using two separate instructions"
     );
 
     let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
@@ -105,8 +106,8 @@ fn counter_init_and_inc_block_test() {
     init_logging();
 
     log_scenario_start(4,
-        &"Counter Initialization and Increase ( Two overlapping states, in the same block )".to_string(),
-        &"Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same block, using two separate transactions".to_string()
+        "Counter Initialization and Increase ( Two overlapping states, in the same block )",
+        "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same block, using two separate transactions"
     );
 
     let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
@@ -147,8 +148,8 @@ fn counter_init_and_inc_anchored() {
     init_logging();
 
     log_scenario_start(15,
-        &"Counter Initialization and Increase ( 1 Anchored Instruction )".to_string(),
-        &"Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring".to_string()
+        "Counter Initialization and Increase ( 1 Anchored Instruction )",
+        "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring"
     );
 
     let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();

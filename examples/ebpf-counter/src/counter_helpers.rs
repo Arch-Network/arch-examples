@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
-use arch_program::account::AccountMeta;
-use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
+use arch_program::system_instruction::SystemInstruction;
 use arch_program::utxo::UtxoMeta;
 use bitcoin::key::{Keypair, UntweakedKeypair};
 use bitcoin::XOnlyPublicKey;
@@ -115,15 +114,10 @@ pub fn assign_ownership_to_program(
     instruction_data.extend(program_pubkey.serialize());
 
     let (txid, _) = sign_and_send_instruction(
-        Instruction {
-            program_id: Pubkey::system_program(),
-            accounts: vec![AccountMeta {
-                pubkey: account_to_transfer_pubkey,
-                is_signer: true,
-                is_writable: true,
-            }],
-            data: instruction_data,
-        },
+        SystemInstruction::new_assign_ownership_instruction(
+            account_to_transfer_pubkey,
+            *program_pubkey,
+        ),
         vec![current_owner_keypair],
     )
     .expect("signing and sending a transaction should not fail");
@@ -149,7 +143,7 @@ pub fn generate_new_keypair() -> (UntweakedKeypair, Pubkey, Address) {
 }
 
 pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData> {
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey.clone())
+    let account_info = read_account_info(NODE1_ADDRESS, *account_pubkey)
         .map_err(|e| anyhow!(format!("Error reading account content {}", e.to_string())))?;
 
     let mut account_info_data = account_info.data.as_slice();
@@ -161,15 +155,15 @@ pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData
 }
 
 pub(crate) fn generate_anchoring(account_pubkey: &Pubkey) -> (UtxoMeta, Vec<u8>) {
-    let (utxo_txid, utxo_vout) = send_utxo(account_pubkey.clone());
+    let (utxo_txid, utxo_vout) = send_utxo(*account_pubkey);
 
     let fees_psbt = prepare_fees();
 
-    return (
+    (
         UtxoMeta::from(
             hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
             utxo_vout,
         ),
         hex::decode(fees_psbt).unwrap(),
-    );
+    )
 }

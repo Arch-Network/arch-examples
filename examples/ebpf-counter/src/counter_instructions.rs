@@ -64,7 +64,7 @@ pub(crate) fn start_new_counter(
 
     let (txid, _) = sign_and_send_instruction(
         arch_program::instruction::Instruction {
-            program_id: program_pubkey.clone(),
+            program_id: *program_pubkey,
             accounts: vec![AccountMeta {
                 pubkey: account_pubkey,
                 is_signer: true,
@@ -145,9 +145,9 @@ pub(crate) fn get_counter_increase_instruction(
     .unwrap();
 
     Instruction {
-        program_id: program_pubkey.clone(),
+        program_id: *program_pubkey,
         accounts: vec![AccountMeta {
-            pubkey: account_pubkey.clone(),
+            pubkey: *account_pubkey,
             is_signer: true,
             is_writable: true,
         }],
@@ -184,13 +184,11 @@ pub fn build_transaction(
         })
         .collect::<Vec<Signature>>();
 
-    let params = RuntimeTransaction {
+    RuntimeTransaction {
         version: 0,
         signatures,
         message,
-    };
-
-    params
+    }
 }
 
 pub fn build_and_send_block(transactions: Vec<RuntimeTransaction>) -> Vec<String> {
@@ -201,7 +199,7 @@ pub fn build_and_send_block(transactions: Vec<RuntimeTransaction>) -> Vec<String
     let transaction_ids: Vec<String> =
         bitcoincore_rpc::jsonrpc::serde_json::from_value(result).expect("Couldn't decode response");
 
-    return transaction_ids;
+    transaction_ids
 }
 
 pub fn fetch_processed_transactions(
@@ -263,5 +261,5 @@ pub fn fetch_processed_transactions(
     }
     pb.finish();
 
-    return Ok(processed_transactions);
+    Ok(processed_transactions)
 }

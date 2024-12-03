@@ -3,10 +3,7 @@ pub fn try_deploy_program(
     program_file_path: &str,
     program_name: &str,
 ) -> anyhow::Result<arch_program::pubkey::Pubkey> {
-    use arch_program::pubkey::Pubkey;
-    use arch_program::{
-        account::AccountMeta, instruction::Instruction, system_instruction::SystemInstruction,
-    };
+    use arch_program::system_instruction::SystemInstruction;
     use sdk::constants::*;
     use sdk::helper::*;
     use std::fs;
@@ -19,16 +16,13 @@ pub fn try_deploy_program(
 
     let elf = fs::read(elf_path).expect("elf path should be available");
 
-    match read_account_info(NODE1_ADDRESS, program_pubkey) {
-        Ok(account_info_result) => {
-            if account_info_result.data != elf {
-                error!("Program account content is different from provided ELF file !");
-                panic!();
-            }
-            println!("\x1b[33m Same program already deployed ! Skipping deployment. \x1b[0m");
-            return Ok(program_pubkey);
+    if let Ok(account_info_result) = read_account_info(NODE1_ADDRESS, program_pubkey) {
+        if account_info_result.data != elf {
+            error!("Program account content is different from provided ELF file !");
+            panic!();
         }
-        Err(_) => {}
+        println!("\x1b[33m Same program already deployed ! Skipping deployment. \x1b[0m");
+        return Ok(program_pubkey);
     };
 
     let (deploy_utxo_btc_txid, deploy_utxo_vout) = send_utxo(program_pubkey);
@@ -77,15 +71,7 @@ pub fn try_deploy_program(
     println!("\x1b[32m Step 3/4 Successful :\x1b[0m Sent ELF file as transactions, and verified program account's content against local ELF file!");
 
     let (executability_txid, _) = sign_and_send_instruction(
-        Instruction {
-            program_id: Pubkey::system_program(),
-            accounts: vec![AccountMeta {
-                pubkey: program_pubkey,
-                is_signer: true,
-                is_writable: true,
-            }],
-            data: vec![2],
-        },
+        SystemInstruction::new_deploy_instruction(program_pubkey),
         vec![program_keypair],
     )
     .expect("signing and sending a transaction should not fail");
@@ -111,5 +97,5 @@ pub fn try_deploy_program(
 
     println!("\x1b[1m\x1b[32m================================================================================== PROGRAM  DEPLOYMENT : OK ! ==================================================================================\x1b[0m");
 
-    return Ok(program_pubkey);
+    Ok(program_pubkey)
 }

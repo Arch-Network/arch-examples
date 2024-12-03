@@ -1,27 +1,10 @@
 /* ---------- BUILD USING CARGO_TARGET_DIR=./target cargo build-sbf --------- */
 use arch_program::{
-    account::AccountInfo,
-    entrypoint,
-    helper::add_state_transition,
-    input_to_sign::InputToSign,
-    msg,
-    program::{
-        get_account_script_pubkey, get_bitcoin_block_height, invoke, next_account_info,
-        set_transaction_to_sign,
-    },
-    program_error::ProgramError,
+    account::AccountInfo, entrypoint, msg, program::next_account_info, program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::SystemInstruction,
-    transaction_to_sign::TransactionToSign,
-    utxo::UtxoMeta,
 };
-use bitcoin::{self, absolute::LockTime, transaction::Version, Transaction};
-use borsh::{BorshDeserialize, BorshSerialize};
-use mint::{
-    initialize_mint, mint_tokens, InitializeMintInput, MintInput, MintStatus, TokenMintDetails,
-};
-use std::collections::HashMap;
-use token_account::{initialize_balance_account, TokenBalance};
+use mint::{initialize_mint, mint_tokens, InitializeMintInput, MintInput};
+use token_account::initialize_balance_account;
 use transfer::{transfer_tokens, TransferInput};
 pub mod errors;
 pub mod mint;

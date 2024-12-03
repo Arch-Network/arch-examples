@@ -1,10 +1,7 @@
-use arch_program::{account::AccountInfo, msg, program_error::ProgramError, pubkey::Pubkey};
+use arch_program::{account::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::{
-    mint::{MintStatus, TokenMintDetails},
-    token_account::TokenBalance,
-};
+use crate::{mint::TokenMintDetails, token_account::TokenBalance};
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct TransferInput {

@@ -23,7 +23,7 @@ use sdk::{
 };
 
 use crate::{
-    instruction::{assign_ownership_instruction, initialize_mint_instruction},
+    instruction::initialize_mint_instruction,
     standard_tests::{MINT_FILE_PATH, MINT_OWNER_FILE_PATH},
 };
 
@@ -57,7 +57,7 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
     if let Ok(account_info_result) = read_account_info(NODE1_ADDRESS, mint_pubkey) {
         match TokenMintDetails::try_from_slice(&account_info_result.data) {
             Ok(_mint_details) => {
-                println!("");
+                println!();
                 println!("\x1b[33m Mint Details already exist in account ! Skipping mint initialization. \x1b[0m");
                 return Ok(mint_pubkey);
             }
@@ -82,7 +82,7 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
     );
 
     let ownership_transfer_instruction =
-        assign_ownership_instruction(&program_pubkey, &mint_pubkey).unwrap();
+        SystemInstruction::new_assign_ownership_instruction(mint_pubkey, program_pubkey);
 
     let test_mint_input = InitializeMintInput::new(
         mint_owner_pubkey.serialize(),
@@ -125,7 +125,7 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
         Status::Processed
     ));
 
-    let account_info = read_account_info(NODE1_ADDRESS, mint_pubkey.clone()).unwrap();
+    let account_info = read_account_info(NODE1_ADDRESS, mint_pubkey).unwrap();
 
     let mint_details = TokenMintDetails::try_from_slice(&account_info.data).unwrap();
 
@@ -137,7 +137,7 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
 
     println!("\x1b[1m\x1b[32m================================================================================== INITIALIZE  MINT : OK ! ==================================================================================\x1b[0m");
 
-    return Ok(mint_pubkey);
+    Ok(mint_pubkey)
 }
 
 pub(crate) fn provide_empty_account_to_program(
@@ -173,7 +173,7 @@ pub(crate) fn provide_empty_account_to_program(
 pub(crate) fn get_mint_info(account_pubkey: &Pubkey) -> Result<TokenMintDetails> {
     use borsh::BorshDeserialize;
 
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey.clone())
+    let account_info = read_account_info(NODE1_ADDRESS, *account_pubkey)
         .map_err(|e| anyhow!(format!("Error reading account content {}", e.to_string())))?;
 
     let mut account_info_data = account_info.data.as_slice();
@@ -185,7 +185,7 @@ pub(crate) fn get_mint_info(account_pubkey: &Pubkey) -> Result<TokenMintDetails>
 }
 
 pub(crate) fn get_balance_account(account_pubkey: &Pubkey) -> Result<TokenBalance> {
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey.clone())
+    let account_info = read_account_info(NODE1_ADDRESS, *account_pubkey)
         .map_err(|e| anyhow!(format!("Error reading account content {}", e.to_string())))?;
 
     let mut account_info_data = account_info.data.as_slice();
@@ -238,20 +238,20 @@ pub(crate) fn create_balance_account(
     println!("\x1b[32m Step 2/3 Successful :\x1b[0m Account Ownership assigned to program ");
 
     let initialize_balance_account_instruction = Instruction {
-        program_id: token_program_pubkey.clone(),
+        program_id: *token_program_pubkey,
         accounts: vec![
             AccountMeta {
-                pubkey: account_pubkey.clone(),
+                pubkey: *account_pubkey,
                 is_signer: true,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: mint_pubkey.clone(),
+                pubkey: *mint_pubkey,
                 is_signer: false,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: balance_account_pubkey.clone(),
+                pubkey: balance_account_pubkey,
                 is_signer: false,
                 is_writable: true,
             },

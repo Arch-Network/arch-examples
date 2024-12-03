@@ -781,6 +781,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     log_scenario_end(20, &format!("{:?}", final_account_data));
 }
+
 #[ignore]
 #[serial]
 #[test]
@@ -894,6 +895,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         ),
     );
 }
+
 #[ignore]
 #[serial]
 #[test]

@@ -76,7 +76,7 @@ pub(crate) fn initialize_mint(
     let serialized_mint_details = borsh::to_vec(&mint_initial_details)
         .map_err(|e| ProgramError::BorshIoError(e.to_string()))?;
 
-    if serialized_mint_details.len() > 0 {
+    if !serialized_mint_details.is_empty() {
         account.realloc(serialized_mint_details.len(), true)?;
     }
 
