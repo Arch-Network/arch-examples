@@ -1,14 +1,11 @@
+use arch_sdk::constants::PROGRAM_FILE_PATH;
+use arch_sdk::processed_transaction::Status;
 use ebpf_counter::{
     counter_deployment::try_deploy_program,
     counter_helpers::{generate_new_keypair, init_logging},
     counter_instructions::{build_and_send_block, build_transaction, fetch_processed_transactions},
 };
 use fungible_token_standard_program::mint::MintStatus;
-use sdk::processed_transaction::Status;
-use sdk::{
-    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::read_account_info,
-};
 use serial_test::serial;
 
 use crate::{
@@ -16,9 +13,7 @@ use crate::{
         create_balance_account, get_balance_account, get_mint_info, try_create_mint_account,
         MINT_TEST_SUPPLY,
     },
-    instruction::{
-        assign_ownership_instruction, create_new_account_instruction, mint_request_instruction,
-    },
+    instruction::mint_request_instruction,
     standard_tests::ELF_PATH,
 };
 

@@ -1,10 +1,10 @@
+use arch_sdk::constants::PROGRAM_FILE_PATH;
+use arch_sdk::processed_transaction::Status;
 use ebpf_counter::{
     counter_deployment::try_deploy_program,
     counter_helpers::{generate_new_keypair, init_logging},
     counter_instructions::{build_and_send_block, build_transaction, fetch_processed_transactions},
 };
-use sdk::constants::PROGRAM_FILE_PATH;
-use sdk::processed_transaction::Status;
 use serial_test::serial;
 
 use crate::{

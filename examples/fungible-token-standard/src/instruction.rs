@@ -3,32 +3,14 @@ use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
     system_instruction::SystemInstruction,
 };
+use arch_sdk::helper::send_utxo;
 use bitcoin::key::Keypair;
 use borsh::BorshSerialize;
 use ebpf_counter::counter_helpers::generate_new_keypair;
 use fungible_token_standard_program::{
     mint::{InitializeMintInput, MintInput},
-    transfer::{self, TransferInput},
+    transfer::TransferInput,
 };
-use sdk::helper::send_utxo;
-
-pub(crate) fn assign_ownership_instruction(
-    program_pubkey: &Pubkey,
-    account_pubkey: &Pubkey,
-) -> Result<Instruction> {
-    let mut instruction_data = vec![3];
-    instruction_data.extend(program_pubkey.serialize());
-
-    Ok(Instruction {
-        program_id: Pubkey::system_program(),
-        accounts: vec![AccountMeta {
-            pubkey: account_pubkey.clone(),
-            is_signer: true,
-            is_writable: true,
-        }],
-        data: instruction_data,
-    })
-}
 
 pub(crate) fn create_new_account_instruction() -> Result<(Keypair, Pubkey, Instruction)> {
     let (account_key_pair, account_pubkey, address) = generate_new_keypair();
@@ -61,9 +43,9 @@ pub(crate) fn initialize_mint_instruction(
         .expect("Couldnt serialize mint input");
 
     let initialize_mint_instruction = Instruction {
-        program_id: token_program_account.clone(),
+        program_id: *token_program_account,
         accounts: vec![AccountMeta {
-            pubkey: mint_account.clone(),
+            pubkey: *mint_account,
             is_signer: true,
             is_writable: true,
         }],
@@ -89,20 +71,20 @@ pub(crate) fn mint_request_instruction(
         .expect("Couldnt serialize mint input");
 
     let mint_instruction = Instruction {
-        program_id: token_program_account.clone(),
+        program_id: *token_program_account,
         accounts: vec![
             AccountMeta {
-                pubkey: mint_account.clone(),
+                pubkey: *mint_account,
                 is_signer: false,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: balance_account.clone(),
+                pubkey: *balance_account,
                 is_signer: false,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: balance_owner_account.clone(),
+                pubkey: *balance_owner_account,
                 is_signer: true,
                 is_writable: true,
             },
@@ -130,25 +112,25 @@ pub(crate) fn transfer_request_instruction(
         .expect("Couldnt serialize mint input");
 
     let transfer_instruction = Instruction {
-        program_id: token_program_account.clone(),
+        program_id: *token_program_account,
         accounts: vec![
             AccountMeta {
-                pubkey: sender_owner_account.clone(),
+                pubkey: *sender_owner_account,
                 is_signer: true,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: mint_account.clone(),
+                pubkey: *mint_account,
                 is_signer: false,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: sender_account.clone(),
+                pubkey: *sender_account,
                 is_signer: false,
                 is_writable: true,
             },
             AccountMeta {
-                pubkey: receiver_account.clone(),
+                pubkey: *receiver_account,
                 is_signer: false,
                 is_writable: true,
             },

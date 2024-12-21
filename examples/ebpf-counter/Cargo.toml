@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sdk = { path = "../../../sdk" }
-arch_program = { path = "../../../program" }
-bip322 = { path = "../../../bip322" }
+arch_sdk = { path = "../../sdk" }
+arch_program = { path = "../../program" }
+bip322 = "0.0.9"
 
 bitcoincore-rpc = "0.19.0"
 hex = "0.4.3"
@@ -14,7 +14,7 @@ borsh = { version = "1.4.0", features = ["derive"] }
 bitcoin = { version = "0.32.3", features = ["serde", "rand"] }
 log = "0.4"
 tracing.workspace = true
-tracing-subscriber = { version = "0.3.3", features = ["env-filter","ansi"] }
+tracing-subscriber = { version = "0.3.3", features = ["env-filter", "ansi"] }
 rand_core = "0.6.4"
 anyhow = "1.0.82"
 serde_json = "1.0.128"

@@ -9,8 +9,8 @@ use crate::{
     },
     ELF_PATH,
 };
-use sdk::processed_transaction::Status;
-use sdk::{
+use arch_sdk::processed_transaction::Status;
+use arch_sdk::{
     constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
     helper::read_account_info,
 };
@@ -32,7 +32,7 @@ fn counter_inc_single_instruction_fail() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
     let increase_transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
 
@@ -68,7 +68,7 @@ fn counter_inc_single_instruction_panic() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
     let increase_transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
 
@@ -104,10 +104,16 @@ fn counter_inc_two_instructions_1st_fail() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let increase_transaction = build_transaction(
         vec![account_keypair],
@@ -145,11 +151,17 @@ fn counter_inc_two_instructions_2nd_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
     let increase_transaction = build_transaction(
         vec![account_keypair],
@@ -188,10 +200,16 @@ fn counter_inc_two_instructions_1st_panic() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let increase_transaction = build_transaction(
         vec![account_keypair],
@@ -229,11 +247,17 @@ fn counter_inc_two_instructions_2nd_panic() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
     let increase_transaction = build_transaction(
         vec![account_keypair],
@@ -272,10 +296,16 @@ fn counter_inc_two_transactions_1st_fail() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let first_increase_transaction =
         build_transaction(vec![account_keypair], vec![first_increase_istruction]);
@@ -322,11 +352,17 @@ fn counter_inc_two_transactions_2nd_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
     let first_increase_transaction =
         build_transaction(vec![account_keypair], vec![first_increase_istruction]);
@@ -374,10 +410,16 @@ fn counter_inc_two_transactions_1st_panic() {
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let first_increase_transaction =
         build_transaction(vec![account_keypair], vec![first_increase_istruction]);
@@ -424,11 +466,17 @@ fn counter_inc_two_transactions_2nd_panic() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None);
+        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
     let first_increase_transaction =
         build_transaction(vec![account_keypair], vec![first_increase_istruction]);
@@ -483,6 +531,7 @@ fn counter_init_and_inc_anchored_fail() {
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
+        None,
     );
 
     let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
@@ -532,10 +581,17 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
+        None,
     );
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let transaction = build_transaction(
         vec![account_keypair],
@@ -589,6 +645,7 @@ fn counter_init_and_two_inc_anchored_fail() {
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
+        None,
     );
 
     let second_increase_instruction = get_counter_increase_instruction(
@@ -597,6 +654,7 @@ fn counter_init_and_two_inc_anchored_fail() {
         false,
         false,
         Some((anchoring_2.0, anchoring_2.1, false)),
+        None,
     );
 
     let transaction = build_transaction(
@@ -629,97 +687,6 @@ fn counter_init_and_two_inc_anchored_fail() {
 #[ignore]
 #[serial]
 #[test]
-fn counter_init_and_two_inc_tx_anchored_fail() {
-    init_logging();
-
-    log_scenario_start(19,
-        "Counter Initialization and Increase ( 1 Anchored transaction signaled to fail, 1 Anchored Transaction signaled to succeed )",
-        "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change, the second transaction will also try to change the state with an anchoring it should fail"
-    );
-
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
-
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
-
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
-
-    let utxo_before_block = account_info.utxo.clone();
-
-    let anchoring = generate_anchoring(&account_pubkey);
-
-    let anchoring_2 = generate_anchoring(&account_pubkey);
-
-    let first_increase_istruction = get_counter_increase_instruction(
-        &program_pubkey,
-        &account_pubkey,
-        false,
-        false,
-        Some((anchoring.0, anchoring.1, true)),
-    );
-
-    let second_increase_instruction = get_counter_increase_instruction(
-        &program_pubkey,
-        &account_pubkey,
-        false,
-        false,
-        Some((anchoring_2.0, anchoring_2.1, false)),
-    );
-
-    let first_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
-
-    let second_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_instruction]);
-
-    let block_transactions = build_and_send_block(vec![first_transaction, second_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
-
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
-
-    let utxo_after_block = account_info.utxo.clone();
-
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
-
-    println!(
-        "1st BTC transaction Result : {:?}",
-        processed_transactions[0].bitcoin_txid.clone()
-    );
-
-    assert!(processed_transactions[1].bitcoin_txid.is_none());
-
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
-
-    assert!(matches!(
-        processed_transactions[1].status,
-        Status::Failed(_)
-    ));
-
-    //rpc.get_raw_transaction(&tx.txid(), None);
-
-    assert_eq!(utxo_after_block, utxo_before_block);
-
-    println!();
-
-    println!("\x1b[1m\x1B[34m Both Bitcoin transactions failed !");
-
-    let final_account_data = get_account_counter(&account_pubkey).unwrap();
-
-    println!("Account data {:?}", final_account_data);
-
-    assert_eq!(final_account_data, CounterData::new(1, 1));
-
-    log_scenario_end(19, &format!("{:?}", final_account_data));
-}
-#[ignore]
-#[serial]
-#[test]
 fn counter_init_and_two_inc_second_anchored_fail() {
     init_logging();
 
@@ -738,8 +705,14 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     let anchoring = generate_anchoring(&account_pubkey);
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, false, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -747,6 +720,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
+        None,
     );
 
     let transaction = build_transaction(
@@ -781,6 +755,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     log_scenario_end(20, &format!("{:?}", final_account_data));
 }
+
 #[ignore]
 #[serial]
 #[test]
@@ -818,6 +793,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
+        None,
     );
 
     let second_increase_instruction = get_counter_increase_instruction(
@@ -826,6 +802,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         false,
         false,
         Some((second_anchoring.0, second_anchoring.1, false)),
+        None,
     );
 
     let first_transaction =
@@ -865,7 +842,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         Status::Processed
     ));
 
-    //rpc.get_raw_transaction(&tx.txid(), None);
+    //rpc.get_raw_transaction(&tx.txid(), None,None);
 
     assert_eq!(first_utxo_after_block, first_utxo_before_block);
 
@@ -894,6 +871,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         ),
     );
 }
+
 #[ignore]
 #[serial]
 #[test]
@@ -929,6 +907,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
+        None,
     );
 
     let second_increase_instruction = get_counter_increase_instruction(
@@ -936,6 +915,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         &second_account_pubkey,
         false,
         false,
+        None,
         None,
     );
 
@@ -976,7 +956,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         Status::Processed
     ));
 
-    //rpc.get_raw_transaction(&tx.txid(), None);
+    //rpc.get_raw_transaction(&tx.txid(), None,None);
 
     assert_eq!(first_utxo_after_block, first_utxo_before_block);
 

@@ -2,28 +2,25 @@ use anyhow::anyhow;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, system_instruction::SystemInstruction,
 };
+use arch_sdk::processed_transaction::Status;
+use arch_sdk::{
+    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
+    helper::{get_processed_transaction, read_account_info, send_utxo, sign_and_send_instruction},
+};
 use ebpf_counter::{
     counter_deployment::try_deploy_program,
     counter_helpers::{generate_new_keypair, init_logging},
     counter_instructions::{build_and_send_block, build_transaction, fetch_processed_transactions},
 };
-use fungible_token_standard_program::{mint::InitializeMintInput, token_account::TokenBalance};
-use sdk::processed_transaction::Status;
-use sdk::{
-    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{get_processed_transaction, read_account_info, send_utxo, sign_and_send_instruction},
-};
+use fungible_token_standard_program::mint::InitializeMintInput;
 use serial_test::serial;
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshSerialize;
 
 use crate::{
     helpers::{
         create_balance_account, get_balance_account, get_mint_info,
-        provide_empty_account_to_program, try_create_mint_account,
-    },
-    instruction::{
-        assign_ownership_instruction, create_new_account_instruction, mint_request_instruction,
+        provide_empty_account_to_program,
     },
     standard_tests::ELF_PATH,
 };
@@ -59,7 +56,7 @@ fn deploy_standard_program() {
         .expect("Couldnt serialize mint input");
 
     let initialize_mint_instruction = Instruction {
-        program_id: program_pubkey.clone(),
+        program_id: program_pubkey,
         accounts: vec![AccountMeta {
             pubkey: mint_account_pubkey,
             is_signer: true,
@@ -109,7 +106,7 @@ fn deploy_standard_program() {
 
     println!("User account {:?}", account_pubkey.serialize());
 
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey.clone())
+    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey)
         .map_err(|e| anyhow!(format!("Error reading account content {}", e.to_string())))
         .unwrap();
 

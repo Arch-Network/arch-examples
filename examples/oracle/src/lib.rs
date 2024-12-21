@@ -1,22 +1,24 @@
 /// Running Tests
 #[cfg(test)]
 mod tests {
+    use arch_program::{
+        account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
+        system_instruction::SystemInstruction, utxo::UtxoMeta,
+    };
     use bitcoincore_rpc::{Auth, Client};
     use common::constants::*;
-    use arch_program::{pubkey::Pubkey, utxo::UtxoMeta, system_instruction::SystemInstruction, instruction::Instruction, account::AccountMeta};
 
+    use borsh::{BorshDeserialize, BorshSerialize};
     use common::helper::*;
-    use serial_test::serial;
     use common::models::*;
-    use std::thread;
-    use std::str::FromStr;
-    use borsh::{BorshSerialize, BorshDeserialize};
-    use std::fs;
     use serde_json::Value;
+    use serial_test::serial;
+    use std::fs;
+    use std::str::FromStr;
+    use std::thread;
 
     #[test]
     fn test_deploy_call() {
-
         println!("{:?}", 10044_u64.to_le_bytes());
         println!("{:?}", 10881_u64.to_le_bytes());
 
@@ -26,14 +28,14 @@ mod tests {
                 "bitcoin".to_string(),
                 "428bae8f3c94f8c39c50757fc89c39bc7e6ebc70ebf8f618".to_string(),
             ),
-        ).unwrap();
+        )
+        .unwrap();
 
-        let (program_keypair, program_pubkey) = with_secret_key_file(PROGRAM_FILE_PATH)
-            .expect("getting caller info should not fail");
+        let (program_keypair, program_pubkey) =
+            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-        let (caller_keypair, caller_pubkey) = with_secret_key_file(CALLER_FILE_PATH)
-            .expect("getting caller info should not fail");
-
+        let (caller_keypair, caller_pubkey) =
+            with_secret_key_file(CALLER_FILE_PATH).expect("getting caller info should not fail");
 
         let (txid, vout) = send_utxo(program_pubkey.clone());
         println!("{}:{} {:?}", txid, vout, hex::encode(program_pubkey));
@@ -45,18 +47,26 @@ mod tests {
                 program_pubkey.clone(),
             ),
             vec![program_keypair],
-        ).expect("signing and sending a transaction should not fail");
+        )
+        .expect("signing and sending a transaction should not fail");
 
         let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
             .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        let txids = deploy_program_txs(program_keypair, "program/target/deploy/oracleprogram.so");
+        let txids = deploy_program_txs(program_keypair, "program/target/deploy/oracleprogram.so")
+            .expect("failed to deploy program");
 
         println!("{:?}", txids);
 
-        let elf = fs::read("program/target/deploy/oracleprogram.so").expect("elf path should be available");
-        assert!(read_account_info(NODE1_ADDRESS, program_pubkey.clone()).unwrap().data == elf);
+        let elf = fs::read("program/target/deploy/oracleprogram.so")
+            .expect("elf path should be available");
+        assert!(
+            read_account_info(NODE1_ADDRESS, program_pubkey.clone())
+                .unwrap()
+                .data
+                == elf
+        );
 
         let (txid, instruction_hash) = sign_and_send_instruction(
             Instruction {
@@ -64,18 +74,23 @@ mod tests {
                 accounts: vec![AccountMeta {
                     pubkey: program_pubkey.clone(),
                     is_signer: true,
-                    is_writable: true
+                    is_writable: true,
                 }],
-                data: vec![2]
+                data: vec![2],
             },
             vec![program_keypair],
-        ).expect("signing and sending a transaction should not fail");
+        )
+        .expect("signing and sending a transaction should not fail");
 
         let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
             .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        assert!(read_account_info(NODE1_ADDRESS, program_pubkey.clone()).unwrap().is_executable);
+        assert!(
+            read_account_info(NODE1_ADDRESS, program_pubkey.clone())
+                .unwrap()
+                .is_executable
+        );
 
         let (txid, vout) = send_utxo(caller_pubkey.clone());
         println!("{}:{} {:?}", txid, vout, hex::encode(caller_pubkey));
@@ -87,7 +102,8 @@ mod tests {
                 caller_pubkey.clone(),
             ),
             vec![caller_keypair],
-        ).expect("signing and sending a transaction should not fail");
+        )
+        .expect("signing and sending a transaction should not fail");
 
         let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
             .expect("get processed transaction should not fail");
@@ -96,8 +112,11 @@ mod tests {
         let mut old_feerate = 0;
 
         loop {
-            let body: Value = reqwest::blocking::get("https://mempool.space/api/v1/fees/recommended").unwrap()
-                    .json().unwrap();
+            let body: Value =
+                reqwest::blocking::get("https://mempool.space/api/v1/fees/recommended")
+                    .unwrap()
+                    .json()
+                    .unwrap();
             let feerate = body.get("fastestFee").unwrap().as_u64().unwrap();
 
             if old_feerate != feerate {
@@ -107,18 +126,22 @@ mod tests {
                         accounts: vec![AccountMeta {
                             pubkey: caller_pubkey.clone(),
                             is_signer: true,
-                            is_writable: true
+                            is_writable: true,
                         }],
-                        data: feerate.to_le_bytes().to_vec()
+                        data: feerate.to_le_bytes().to_vec(),
                     },
                     vec![caller_keypair],
-                ).expect("signing and sending a transaction should not fail");
-    
+                )
+                .expect("signing and sending a transaction should not fail");
+
                 let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
                     .expect("get processed transaction should not fail");
                 println!("processed_tx {:?}", processed_tx);
-    
-                println!("{:?}", read_account_info(NODE1_ADDRESS, caller_pubkey.clone()));
+
+                println!(
+                    "{:?}",
+                    read_account_info(NODE1_ADDRESS, caller_pubkey.clone())
+                );
 
                 old_feerate = feerate;
             }
@@ -145,7 +168,7 @@ mod tests {
     //     let state_txid = send_utxo();
     //     println!("utxo {:?}", format!("{}:1", state_txid.clone()));
     //     println!("read utxo {:?}", read_utxo(NODE1_ADDRESS, format!("{}:1", state_txid.clone())).expect("read utxo should not fail"));
- 
+
     //     let instruction_data = HelloWorldParams {
     //         name: "Amine".to_string(),
     //         tx_hex: hex::decode(prepare_fees()).unwrap(),
@@ -212,7 +235,7 @@ mod tests {
     //         utxo.data,
     //         "Hello Marouane!".as_bytes().to_vec()
     //     );
-        
+
     // }
 
     // #[test]

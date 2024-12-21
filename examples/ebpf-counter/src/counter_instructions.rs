@@ -4,20 +4,19 @@ use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction::SystemInstruction;
 use arch_program::utxo::UtxoMeta;
 
-use bip322::sign_message_bip322;
+use arch_sdk::constants::{BITCOIN_NETWORK, GET_PROCESSED_TRANSACTION, NODE1_ADDRESS};
+use arch_sdk::helper::{
+    get_processed_transaction, post_data, process_get_transaction_result, process_result,
+    read_account_info, send_utxo, sign_and_send_instruction, sign_message_bip322,
+};
 use bitcoin::key::Keypair;
 use bitcoin::XOnlyPublicKey;
 use borsh::{BorshDeserialize, BorshSerialize};
 use indicatif::{ProgressBar, ProgressStyle};
-use sdk::constants::{BITCOIN_NETWORK, GET_PROCESSED_TRANSACTION, NODE1_ADDRESS};
-use sdk::helper::{
-    get_processed_transaction, post_data, process_get_transaction_result, process_result,
-    read_account_info, send_utxo, sign_and_send_instruction,
-};
 use serde_json::Value;
 
 use anyhow::{anyhow, Result};
-use sdk::processed_transaction::{ProcessedTransaction, Status};
+use arch_sdk::processed_transaction::{ProcessedTransaction, Status};
 use tracing::{debug, error};
 
 pub(crate) fn start_new_counter(
@@ -25,16 +24,15 @@ pub(crate) fn start_new_counter(
     step: u16,
     initial_value: u16,
 ) -> Result<(Pubkey, Keypair)> {
-    println!();
-    println!("\x1b[1m\x1b[32m===== COUNTER INITIALIZATION ===================================================================================================================================================================\x1b[0m");
+    //print_title("COUNTER INITIALIZATION", 5);
 
     let (account_key_pair, account_pubkey, address) = generate_new_keypair();
 
     let (txid, vout) = send_utxo(account_pubkey);
 
     println!(
-        "\x1b[32m Step 1/3 Successful :\x1b[0m Account created with address  {}",
-        address
+        "\x1b[32m Step 1/3 Successful :\x1b[0m Account created with address, {:?}",
+        account_pubkey.0
     );
 
     let (txid, _) = sign_and_send_instruction(
@@ -59,12 +57,13 @@ pub(crate) fn start_new_counter(
         anchoring: None,
         should_return_err: false,
         should_panic: false,
+        add_output: None,
     })
     .unwrap();
 
     let (txid, _) = sign_and_send_instruction(
         arch_program::instruction::Instruction {
-            program_id: program_pubkey.clone(),
+            program_id: *program_pubkey,
             accounts: vec![AccountMeta {
                 pubkey: account_pubkey,
                 is_signer: true,
@@ -95,7 +94,7 @@ pub(crate) fn start_new_counter(
 
     println!("\x1b[32m Step 3/3 Successful :\x1b[0m Counter succesfully initialized \x1b[1m\x1B[34mCounter Data : Step {} ======= Value {}\x1b[0m",account_counter.current_step, account_counter.current_value);
 
-    println!("\x1b[1m\x1b[32m===== COUNTER INITIALIZATION : OK ! ============================================================================================================================================================\x1b[0m");
+    //print_title("COUNTER INITIALIZATION : OK !", 5);
 
     Ok((account_pubkey, account_key_pair))
 }
@@ -127,6 +126,7 @@ pub struct CounterInput {
     pub anchoring: Option<(UtxoMeta, Vec<u8>, bool)>,
     pub should_return_err: bool,
     pub should_panic: bool,
+    pub add_output: Option<u64>,
 }
 
 pub(crate) fn get_counter_increase_instruction(
@@ -135,30 +135,32 @@ pub(crate) fn get_counter_increase_instruction(
     should_return_err: bool,
     should_panic: bool,
     anchoring: Option<(UtxoMeta, Vec<u8>, bool)>,
+    add_output: Option<u64>,
 ) -> Instruction {
     let serialized_counter_input = borsh::to_vec(&CounterInput {
         instruction: CounterInstruction::IncreaseCounter,
         anchoring,
         should_return_err,
         should_panic,
+        add_output,
     })
     .unwrap();
 
     Instruction {
-        program_id: program_pubkey.clone(),
+        program_id: *program_pubkey,
         accounts: vec![AccountMeta {
-            pubkey: account_pubkey.clone(),
+            pubkey: *account_pubkey,
             is_signer: true,
             is_writable: true,
         }],
         data: serialized_counter_input,
     }
 }
-use sdk::arch_program::message::Message;
-use sdk::runtime_transaction::RuntimeTransaction;
-use sdk::signature::Signature;
+use arch_sdk::arch_program::message::Message;
+use arch_sdk::runtime_transaction::RuntimeTransaction;
+use arch_sdk::signature::Signature;
 
-use crate::counter_helpers::{assign_ownership_to_program, generate_new_keypair};
+use crate::counter_helpers::{assign_ownership_to_program, generate_new_keypair, print_title};
 
 pub fn build_transaction(
     signer_key_pairs: Vec<Keypair>,
@@ -184,13 +186,11 @@ pub fn build_transaction(
         })
         .collect::<Vec<Signature>>();
 
-    let params = RuntimeTransaction {
+    RuntimeTransaction {
         version: 0,
         signatures,
         message,
-    };
-
-    params
+    }
 }
 
 pub fn build_and_send_block(transactions: Vec<RuntimeTransaction>) -> Vec<String> {
@@ -201,7 +201,7 @@ pub fn build_and_send_block(transactions: Vec<RuntimeTransaction>) -> Vec<String
     let transaction_ids: Vec<String> =
         bitcoincore_rpc::jsonrpc::serde_json::from_value(result).expect("Couldn't decode response");
 
-    return transaction_ids;
+    transaction_ids
 }
 
 pub fn fetch_processed_transactions(
@@ -263,5 +263,5 @@ pub fn fetch_processed_transactions(
     }
     pb.finish();
 
-    return Ok(processed_transactions);
+    Ok(processed_transactions)
 }

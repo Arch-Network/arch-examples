@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-arch_program = { path = "../../../program" }
-ebpf-counter =  { path = "../ebpf-counter" }
-sdk = { path = "../../../sdk" }
-fungible-token-standard-program = { path = "./program" , features = ["no-entrypoint"] }
+arch_program = { path = "../../program" }
+ebpf-counter = { path = "../ebpf-counter" }
+arch_sdk = { path = "../../sdk" }
+fungible-token-standard-program = { path = "./program", features = [
+  "no-entrypoint",
+] }
 
 bitcoincore-rpc = "0.18.0"
 hex = "0.4.3"
