@@ -242,8 +242,8 @@ pub fn fetch_processed_transactions(
             }
         }
 
-        while Status::from_value(&processed_tx["status"]) == Some(Status::Processing) {
-            println!("Processed transaction is not yet finalized. Retrying...");
+        while Status::from_value(&processed_tx["status"]) == Some(Status::Queued) {
+            //println!("Processed transaction is not yet finalized. Retrying...");
             std::thread::sleep(std::time::Duration::from_secs(wait_time));
             processed_tx = process_get_transaction_result(post_data(
                 NODE1_ADDRESS,

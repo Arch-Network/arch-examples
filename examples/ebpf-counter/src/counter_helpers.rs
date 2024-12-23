@@ -40,11 +40,7 @@ pub fn print_title(title: &str, color: u8) {
     println!("{}{}{}{}", start_format, line, dashes, reset_format);
 }
 
-pub(crate) fn log_scenario_start(
-    scenario_index: u16,
-    scenario_title: &str,
-    scenario_description: &str,
-) {
+pub fn log_scenario_start(scenario_index: u16, scenario_title: &str, scenario_description: &str) {
     println!("\n\n\n");
 
     // Print header separator
@@ -67,7 +63,7 @@ pub(crate) fn log_scenario_start(
     print_title("", 1); // Blue separator line
 }
 
-pub(crate) fn log_scenario_end(scenario_index: u16, scenario_states: &str) {
+pub fn log_scenario_end(scenario_index: u16, scenario_states: &str) {
     println!();
 
     // Print end separator
