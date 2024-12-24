@@ -21,7 +21,6 @@ mod tests {
         pub utxo: UtxoMeta,
     }
 
-    #[ignore]
     #[test]
     fn test_sign_with_random_nonce() {
         let (first_account_keypair, _first_account_pubkey) =

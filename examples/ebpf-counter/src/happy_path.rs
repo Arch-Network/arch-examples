@@ -1,8 +1,12 @@
-use std::{io, str::FromStr};
+use std::str::FromStr;
 
 use arch_sdk::{
     constants::{
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, PROGRAM_FILE_PATH,
+    },
+    helper::{
+        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
+        log_scenario_end, log_scenario_start,
     },
     processed_transaction::Status,
 };
@@ -11,13 +15,8 @@ use serial_test::serial;
 
 use crate::{
     counter_deployment::try_deploy_program,
-    counter_helpers::{
-        generate_anchoring, get_account_counter, init_logging, log_scenario_end, log_scenario_start,
-    },
-    counter_instructions::{
-        build_and_send_block, build_transaction, fetch_processed_transactions,
-        get_counter_increase_instruction, start_new_counter, CounterData,
-    },
+    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     rollback_tests::mine_block,
     ELF_PATH,
 };
@@ -198,7 +197,7 @@ fn counter_init_and_inc_anchored() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     mine_block();
 

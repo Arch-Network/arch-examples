@@ -1,4 +1,4 @@
-use crate::counter_helpers::print_title;
+use arch_sdk::helper::print_title;
 
 pub fn try_deploy_program(
     elf_path: &str,

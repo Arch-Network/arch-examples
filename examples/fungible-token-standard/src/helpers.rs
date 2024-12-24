@@ -3,6 +3,10 @@ use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
     system_instruction::SystemInstruction,
 };
+use arch_sdk::helper::{
+    assign_ownership_to_program, build_and_send_block, build_transaction,
+    fetch_processed_transactions, generate_new_keypair, print_title,
+};
 use arch_sdk::processed_transaction::Status;
 use arch_sdk::{
     constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
@@ -13,10 +17,6 @@ use arch_sdk::{
 };
 use bitcoin::key::Keypair;
 use borsh::BorshDeserialize;
-use ebpf_counter::{
-    counter_helpers::{assign_ownership_to_program, generate_new_keypair, print_title},
-    counter_instructions::{build_and_send_block, build_transaction, fetch_processed_transactions},
-};
 use fungible_token_standard_program::{
     mint::{InitializeMintInput, TokenMintDetails},
     token_account::TokenBalance,

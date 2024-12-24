@@ -3,10 +3,9 @@ use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
     system_instruction::SystemInstruction,
 };
-use arch_sdk::helper::send_utxo;
+use arch_sdk::helper::{generate_new_keypair, send_utxo};
 use bitcoin::key::Keypair;
 use borsh::BorshSerialize;
-use ebpf_counter::counter_helpers::generate_new_keypair;
 use fungible_token_standard_program::{
     mint::{InitializeMintInput, MintInput},
     transfer::TransferInput,

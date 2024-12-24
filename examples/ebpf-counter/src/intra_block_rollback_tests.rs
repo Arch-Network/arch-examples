@@ -1,13 +1,15 @@
-use arch_sdk::constants::PROGRAM_FILE_PATH;
+use arch_sdk::{
+    constants::PROGRAM_FILE_PATH,
+    helper::{
+        build_and_send_block, build_transaction, init_logging, log_scenario_start, print_title,
+    },
+};
 use serial_test::serial;
 
 use crate::{
     counter_deployment::try_deploy_program,
-    counter_helpers::{generate_anchoring, init_logging, log_scenario_start, print_title},
-    counter_instructions::{
-        build_and_send_block, build_transaction, get_counter_increase_instruction,
-        start_new_counter,
-    },
+    counter_helpers::generate_anchoring_psbt,
+    counter_instructions::{get_counter_increase_instruction, start_new_counter},
     rollback_tests::mine_block,
     ELF_PATH,
 };
@@ -35,7 +37,7 @@ fn test() {
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     loop {
-        let anchoring = generate_anchoring(&account_pubkey);
+        let anchoring = generate_anchoring_psbt(&account_pubkey);
 
         let btc_block_hash = mine_block();
 

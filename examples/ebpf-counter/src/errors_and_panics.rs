@@ -1,19 +1,18 @@
 use crate::{
     counter_deployment::try_deploy_program,
-    counter_helpers::{
-        generate_anchoring, get_account_counter, init_logging, log_scenario_end, log_scenario_start,
-    },
-    counter_instructions::{
-        build_and_send_block, build_transaction, fetch_processed_transactions,
-        get_counter_increase_instruction, start_new_counter, CounterData,
-    },
+    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
-use arch_sdk::processed_transaction::Status;
 use arch_sdk::{
     constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::read_account_info,
+    helper::{
+        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
+        log_scenario_end, log_scenario_start, read_account_info,
+    },
+    processed_transaction::Status,
 };
+
 use serial_test::serial;
 
 #[ignore]
@@ -523,7 +522,7 @@ fn counter_init_and_inc_anchored_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -573,7 +572,7 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -635,9 +634,9 @@ fn counter_init_and_two_inc_anchored_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
-    let anchoring_2 = generate_anchoring(&account_pubkey);
+    let anchoring_2 = generate_anchoring_psbt(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -703,7 +702,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     let utxo_before_block = account_info.utxo.clone();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -783,9 +782,9 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
 
     let second_utxo_before_block = second_account_info.utxo.clone();
 
-    let first_anchoring = generate_anchoring(&first_account_pubkey);
+    let first_anchoring = generate_anchoring_psbt(&first_account_pubkey);
 
-    let second_anchoring = generate_anchoring(&second_account_pubkey);
+    let second_anchoring = generate_anchoring_psbt(&second_account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -899,7 +898,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
 
     let second_utxo_before_block = second_account_info.utxo.clone();
 
-    let first_anchoring = generate_anchoring(&first_account_pubkey);
+    let first_anchoring = generate_anchoring_psbt(&first_account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,

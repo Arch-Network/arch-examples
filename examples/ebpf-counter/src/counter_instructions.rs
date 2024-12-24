@@ -4,19 +4,15 @@ use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction::SystemInstruction;
 use arch_program::utxo::UtxoMeta;
 
-use arch_sdk::constants::{BITCOIN_NETWORK, GET_PROCESSED_TRANSACTION, NODE1_ADDRESS};
+use arch_sdk::constants::NODE1_ADDRESS;
 use arch_sdk::helper::{
-    get_processed_transaction, post_data, process_get_transaction_result, process_result,
-    read_account_info, send_utxo, sign_and_send_instruction, sign_message_bip322,
+    assign_ownership_to_program, generate_new_keypair, get_processed_transaction,
+    read_account_info, send_utxo, sign_and_send_instruction,
 };
 use bitcoin::key::Keypair;
-use bitcoin::XOnlyPublicKey;
 use borsh::{BorshDeserialize, BorshSerialize};
-use indicatif::{ProgressBar, ProgressStyle};
-use serde_json::Value;
 
 use anyhow::{anyhow, Result};
-use arch_sdk::processed_transaction::{ProcessedTransaction, Status};
 use tracing::{debug, error};
 
 pub(crate) fn start_new_counter(
@@ -159,109 +155,3 @@ pub(crate) fn get_counter_increase_instruction(
 use arch_sdk::arch_program::message::Message;
 use arch_sdk::runtime_transaction::RuntimeTransaction;
 use arch_sdk::signature::Signature;
-
-use crate::counter_helpers::{assign_ownership_to_program, generate_new_keypair, print_title};
-
-pub fn build_transaction(
-    signer_key_pairs: Vec<Keypair>,
-    instructions: Vec<Instruction>,
-) -> RuntimeTransaction {
-    let pubkeys = signer_key_pairs
-        .iter()
-        .map(|signer| Pubkey::from_slice(&XOnlyPublicKey::from_keypair(signer).0.serialize()))
-        .collect::<Vec<Pubkey>>();
-
-    let message = Message {
-        signers: pubkeys,
-        instructions,
-    };
-
-    let digest_slice = message.hash();
-
-    let signatures = signer_key_pairs
-        .iter()
-        .map(|signer| {
-            let signature = sign_message_bip322(signer, &digest_slice, BITCOIN_NETWORK).to_vec();
-            Signature(signature)
-        })
-        .collect::<Vec<Signature>>();
-
-    RuntimeTransaction {
-        version: 0,
-        signatures,
-        message,
-    }
-}
-
-pub fn build_and_send_block(transactions: Vec<RuntimeTransaction>) -> Vec<String> {
-    let result: bitcoincore_rpc::jsonrpc::serde_json::Value =
-        process_result(post_data(NODE1_ADDRESS, "send_transactions", transactions))
-            .expect("send_transaction should not fail");
-
-    let transaction_ids: Vec<String> =
-        bitcoincore_rpc::jsonrpc::serde_json::from_value(result).expect("Couldn't decode response");
-
-    transaction_ids
-}
-
-pub fn fetch_processed_transactions(
-    transaction_ids: Vec<String>,
-) -> Result<Vec<ProcessedTransaction>> {
-    let pb = ProgressBar::new(transaction_ids.len() as u64);
-
-    pb.set_style(ProgressStyle::default_bar()
-            .progress_chars("x>-")
-            .template("{spinner:.green}[{elapsed_precise:.blue}] {pos:.blue} {msg:.blue} [{bar:100.green/blue}] {pos}/{len} ({eta})").unwrap());
-
-    pb.set_message("Fetched Processed Transactions :");
-
-    let mut processed_transactions: Vec<ProcessedTransaction> = vec![];
-
-    for transaction_id in transaction_ids.iter() {
-        let mut wait_time = 1;
-
-        let mut processed_tx = process_get_transaction_result(post_data(
-            NODE1_ADDRESS,
-            GET_PROCESSED_TRANSACTION,
-            transaction_id.clone(),
-        ))
-        .unwrap();
-
-        while processed_tx == Value::Null {
-            std::thread::sleep(std::time::Duration::from_secs(wait_time));
-            processed_tx = process_get_transaction_result(post_data(
-                NODE1_ADDRESS,
-                GET_PROCESSED_TRANSACTION,
-                transaction_id.clone(),
-            ))
-            .unwrap();
-            wait_time += 1;
-            if wait_time >= 60 {
-                println!("get_processed_transaction has run for more than 60 seconds");
-                return Err(anyhow!("Failed to retrieve processed transaction"));
-            }
-        }
-
-        while Status::from_value(&processed_tx["status"]) == Some(Status::Queued) {
-            //println!("Processed transaction is not yet finalized. Retrying...");
-            std::thread::sleep(std::time::Duration::from_secs(wait_time));
-            processed_tx = process_get_transaction_result(post_data(
-                NODE1_ADDRESS,
-                GET_PROCESSED_TRANSACTION,
-                transaction_id.clone(),
-            ))
-            .unwrap();
-            wait_time += 1;
-            if wait_time >= 60 {
-                println!("get_processed_transaction has run for more than 60 seconds");
-                return Err(anyhow!("Failed to retrieve processed transaction"));
-            }
-        }
-        processed_transactions.push(serde_json::from_value(processed_tx).unwrap());
-        pb.inc(1);
-        pb.set_message("Fetched Processed Transactions :");
-    }
-    pb.finish();
-
-    Ok(processed_transactions)
-}

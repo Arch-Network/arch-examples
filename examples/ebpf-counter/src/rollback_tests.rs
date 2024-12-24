@@ -7,10 +7,13 @@ use std::{str::FromStr, thread, time::Duration};
 use arch_sdk::{
     constants::{
         BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
-        BITCOIN_NODE2_P2P_ADDRESS, BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD,
-        BITCOIN_NODE_USERNAME, MINING_ADDRESS, PROGRAM_FILE_PATH,
+        BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, MINING_ADDRESS,
+        PROGRAM_FILE_PATH,
     },
-    helper::send_utxo,
+    helper::{
+        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
+        log_scenario_end, log_scenario_start, print_title,
+    },
     processed_transaction::Status,
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
@@ -19,14 +22,8 @@ use serial_test::serial;
 
 use crate::{
     counter_deployment::try_deploy_program,
-    counter_helpers::{
-        generate_anchoring, get_account_counter, init_logging, log_scenario_end,
-        log_scenario_start, print_title,
-    },
-    counter_instructions::{
-        build_and_send_block, build_transaction, fetch_processed_transactions,
-        get_counter_increase_instruction, start_new_counter, CounterData,
-    },
+    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
 
@@ -156,7 +153,7 @@ fn single_utxo_rbf_two_accounts() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -289,7 +286,7 @@ fn single_utxo_rbf_three_accounts() {
     let (third_account_pubkey, third_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -451,7 +448,7 @@ fn rbf_orphan_arch_txs() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -616,7 +613,7 @@ fn rbf_reorg() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
 
     let btc_block_hash = mine_block();
 

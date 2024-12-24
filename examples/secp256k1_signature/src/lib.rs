@@ -4,14 +4,14 @@ pub mod secp256k1_signature_tests {
         "./program/target/sbf-solana-solana/release/secp256k1_signature_program.so";
     use arch_program::instruction::Instruction;
     use arch_sdk::constants::*;
+    use arch_sdk::helper::{
+        build_and_send_block, build_transaction, fetch_processed_transactions,
+        generate_new_keypair, init_logging, log_scenario_end, log_scenario_start,
+    };
     use arch_sdk::processed_transaction::Status;
     use borsh::{BorshDeserialize, BorshSerialize};
     use ebpf_counter::counter_deployment::try_deploy_program;
-    use ebpf_counter::counter_helpers::generate_new_keypair;
-    use ebpf_counter::counter_helpers::{init_logging, log_scenario_end, log_scenario_start};
-    use ebpf_counter::counter_instructions::{
-        build_and_send_block, build_transaction, fetch_processed_transactions,
-    };
+
     use libsecp256k1::sign;
     use libsecp256k1::Message;
     use libsecp256k1::SecretKey;
