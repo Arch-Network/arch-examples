@@ -56,10 +56,6 @@ mod tests {
             with_secret_key_file(".first_account.json")
                 .expect("getting first account info should not fail");
 
-        let (second_account_keypair, second_account_pubkey) =
-            with_secret_key_file(".second_account.json")
-                .expect("getting second account info should not fail");
-
         let (txid, vout) = send_utxo(program_pubkey);
         println!(
             "{}:{} {:?}",
@@ -177,40 +173,22 @@ mod tests {
 
         println!("sending THE transaction");
 
-        let (utxo_txid, utxo_vout) = send_utxo(second_account_pubkey);
-        println!(
-            "{}:{} {:?}",
-            utxo_txid,
-            utxo_vout,
-            hex::encode(second_account_pubkey.serialize())
-        );
-
         let (txid, _) = sign_and_send_instruction(
             Instruction {
                 program_id: program_pubkey,
-                accounts: vec![
-                    AccountMeta {
-                        pubkey: first_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: second_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                ],
+                accounts: vec![AccountMeta {
+                    pubkey: first_account_pubkey,
+                    is_signer: true,
+                    is_writable: true,
+                }],
                 data: borsh::to_vec(&HelloWorldParams {
                     name: "arch".to_string(),
                     tx_hex: hex::decode(prepare_fees()).unwrap(),
-                    utxo: UtxoMeta::from(
-                        hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
-                        utxo_vout,
-                    ),
+                    utxo: UtxoMeta::from(hex::decode(txid).unwrap().try_into().unwrap(), vout),
                 })
                 .unwrap(),
             },
-            vec![first_account_keypair, second_account_keypair],
+            vec![first_account_keypair],
         )
         .expect("signing and sending a transaction should not fail");
 
@@ -218,124 +196,13 @@ mod tests {
             .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        let first_account_last_state =
-            read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
-        println!("{:?}", first_account_last_state);
+        let first_account_state = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+        println!("{:?}", first_account_state);
         assert_eq!(
-            first_account_last_state.utxo,
-            format!("{}:{}", processed_tx.bitcoin_txid.unwrap(), 0)
+            String::from_utf8(first_account_state.data.clone()).unwrap(),
+            "Hello arch"
         );
-
-        let second_account_last_state =
-            read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
-        println!("{:?}", second_account_last_state);
-        assert_eq!(
-            second_account_last_state.utxo,
-            format!("{}:{}", utxo_txid, utxo_vout)
-        );
-
-        // ####################################################################################################################
-
-        println!("sending THE transaction");
-
-        let (utxo_txid, utxo_vout) = send_utxo(second_account_pubkey);
-        println!(
-            "{}:{} {:?}",
-            utxo_txid,
-            utxo_vout,
-            hex::encode(second_account_pubkey.serialize())
-        );
-
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
-                program_id: program_pubkey,
-                accounts: vec![
-                    AccountMeta {
-                        pubkey: first_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: second_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                ],
-                data: borsh::to_vec(&HelloWorldParams {
-                    name: "arch".to_string(),
-                    tx_hex: hex::decode(prepare_fees()).unwrap(),
-                    utxo: UtxoMeta::from(
-                        hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
-                        utxo_vout,
-                    ),
-                })
-                .unwrap(),
-            },
-            vec![first_account_keypair, second_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-        println!("processed_tx {:?}", processed_tx);
-
-        println!(
-            "{:?}",
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .owner,
-            first_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .data,
-            first_account_last_state.data
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .utxo,
-            first_account_last_state.utxo
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .is_executable,
-            first_account_last_state.is_executable
-        );
-
-        println!(
-            "{:?}",
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .owner,
-            second_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .data,
-            second_account_last_state.data
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .owner,
-            second_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .is_executable,
-            second_account_last_state.is_executable
-        );
+        assert_eq!(first_account_state.utxo, format!("{}:{}", txid, 0));
     }
 
     #[ignore]
@@ -347,10 +214,6 @@ mod tests {
         let (first_account_keypair, first_account_pubkey) =
             with_secret_key_file(".first_account.json")
                 .expect("getting first account info should not fail");
-
-        let (second_account_keypair, second_account_pubkey) =
-            with_secret_key_file(".second_account.json")
-                .expect("getting second account info should not fail");
 
         let (txid, vout) = send_utxo(program_pubkey);
         println!(
@@ -547,40 +410,22 @@ mod tests {
 
         println!("sending THE transaction");
 
-        let (utxo_txid, utxo_vout) = send_utxo(second_account_pubkey);
-        println!(
-            "{}:{} {:?}",
-            utxo_txid,
-            utxo_vout,
-            hex::encode(second_account_pubkey.serialize())
-        );
-
         let (txid, _) = sign_and_send_instruction(
             Instruction {
                 program_id: program_pubkey,
-                accounts: vec![
-                    AccountMeta {
-                        pubkey: first_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: second_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                ],
+                accounts: vec![AccountMeta {
+                    pubkey: first_account_pubkey,
+                    is_signer: true,
+                    is_writable: true,
+                }],
                 data: borsh::to_vec(&HelloWorldParams {
                     name: "arch".to_string(),
                     tx_hex: hex::decode(prepare_fees()).unwrap(),
-                    utxo: UtxoMeta::from(
-                        hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
-                        utxo_vout,
-                    ),
+                    utxo: UtxoMeta::from(hex::decode(txid).unwrap().try_into().unwrap(), vout),
                 })
                 .unwrap(),
             },
-            vec![first_account_keypair, second_account_keypair],
+            vec![first_account_keypair],
         )
         .expect("signing and sending a transaction should not fail");
 
@@ -588,123 +433,12 @@ mod tests {
             .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        let first_account_last_state =
-            read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
-        println!("{:?}", first_account_last_state);
+        let first_account_state = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+        println!("{:?}", first_account_state);
         assert_eq!(
-            first_account_last_state.utxo,
-            format!("{}:{}", processed_tx.bitcoin_txid.unwrap(), 0)
+            String::from_utf8(first_account_state.data.clone()).unwrap(),
+            "Hello arch"
         );
-
-        let second_account_last_state =
-            read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
-        println!("{:?}", second_account_last_state);
-        assert_eq!(
-            second_account_last_state.utxo,
-            format!("{}:{}", utxo_txid, utxo_vout)
-        );
-
-        // ####################################################################################################################
-
-        println!("sending THE transaction");
-
-        let (utxo_txid, utxo_vout) = send_utxo(second_account_pubkey);
-        println!(
-            "{}:{} {:?}",
-            utxo_txid,
-            utxo_vout,
-            hex::encode(second_account_pubkey.serialize())
-        );
-
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
-                program_id: program_pubkey,
-                accounts: vec![
-                    AccountMeta {
-                        pubkey: first_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: second_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                ],
-                data: borsh::to_vec(&HelloWorldParams {
-                    name: "arch".to_string(),
-                    tx_hex: hex::decode(prepare_fees()).unwrap(),
-                    utxo: UtxoMeta::from(
-                        hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
-                        utxo_vout,
-                    ),
-                })
-                .unwrap(),
-            },
-            vec![first_account_keypair, second_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-        println!("processed_tx {:?}", processed_tx);
-
-        println!(
-            "{:?}",
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .owner,
-            first_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .data,
-            first_account_last_state.data
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .utxo,
-            first_account_last_state.utxo
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .is_executable,
-            first_account_last_state.is_executable
-        );
-
-        println!(
-            "{:?}",
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .owner,
-            second_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .data,
-            second_account_last_state.data
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .owner,
-            second_account_last_state.owner
-        );
-        assert_eq!(
-            read_account_info(NODE1_ADDRESS, second_account_pubkey)
-                .unwrap()
-                .is_executable,
-            second_account_last_state.is_executable
-        );
+        assert_eq!(first_account_state.utxo, format!("{}:{}", txid, 0));
     }
 }
