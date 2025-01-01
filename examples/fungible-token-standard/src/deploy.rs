@@ -4,14 +4,13 @@ use arch_program::{
 };
 use arch_sdk::helper::{
     build_and_send_block, build_transaction, fetch_processed_transactions, generate_new_keypair,
-    init_logging,
+    init_logging, try_deploy_program,
 };
 use arch_sdk::processed_transaction::Status;
 use arch_sdk::{
     constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
     helper::{get_processed_transaction, read_account_info, send_utxo, sign_and_send_instruction},
 };
-use ebpf_counter::counter_deployment::try_deploy_program;
 use fungible_token_standard_program::mint::InitializeMintInput;
 use serial_test::serial;
 

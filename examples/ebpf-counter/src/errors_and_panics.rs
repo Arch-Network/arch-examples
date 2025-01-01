@@ -1,5 +1,4 @@
 use crate::{
-    counter_deployment::try_deploy_program,
     counter_helpers::{generate_anchoring_psbt, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
@@ -8,7 +7,7 @@ use arch_sdk::{
     constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
     helper::{
         build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start, read_account_info,
+        log_scenario_end, log_scenario_start, read_account_info, try_deploy_program,
     },
     processed_transaction::Status,
 };

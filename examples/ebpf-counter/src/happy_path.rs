@@ -6,7 +6,7 @@ use arch_sdk::{
     },
     helper::{
         build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start,
+        log_scenario_end, log_scenario_start, try_deploy_program,
     },
     processed_transaction::Status,
 };
@@ -14,7 +14,6 @@ use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serial_test::serial;
 
 use crate::{
-    counter_deployment::try_deploy_program,
     counter_helpers::{generate_anchoring_psbt, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     rollback_tests::mine_block,

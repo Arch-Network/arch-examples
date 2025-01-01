@@ -7,10 +7,10 @@ pub mod secp256k1_signature_tests {
     use arch_sdk::helper::{
         build_and_send_block, build_transaction, fetch_processed_transactions,
         generate_new_keypair, init_logging, log_scenario_end, log_scenario_start,
+        try_deploy_program,
     };
     use arch_sdk::processed_transaction::Status;
     use borsh::{BorshDeserialize, BorshSerialize};
-    use ebpf_counter::counter_deployment::try_deploy_program;
 
     use libsecp256k1::sign;
     use libsecp256k1::Message;
