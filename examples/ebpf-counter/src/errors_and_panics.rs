@@ -540,10 +540,12 @@ fn counter_init_and_inc_anchored_fail() {
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
+    // assert!(matches!(
+    //     processed_transactions[0].status,
+    //     Status::Failed(_)
+    // ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     println!();
 
@@ -602,10 +604,12 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
+    // assert!(matches!(
+    //     processed_transactions[0].status,
+    //     Status::Failed(_)
+    // ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     println!();
 
@@ -732,10 +736,12 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
+    // assert!(matches!(
+    //     processed_transactions[0].status,
+    //     Status::Failed(_)
+    // ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     println!();
 
@@ -825,20 +831,19 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
 
     assert!(matches!(
         processed_transactions[0].status,
-        Status::Failed(_)
+        Status::Processed
     ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     assert!(processed_transactions[1].bitcoin_txid.is_some());
-
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Failed(_)
-    ));
 
     assert!(matches!(
         processed_transactions[1].status,
         Status::Processed
     ));
+
+    assert!(!processed_transactions[1].rollback_status);
 
     //rpc.get_raw_transaction(&tx.txid(), None,None);
 
@@ -939,22 +944,26 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
 
     assert!(matches!(
         processed_transactions[0].status,
-        Status::Failed(_)
+        Status::Processed
     ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     assert!(processed_transactions[1].bitcoin_txid.is_none());
 
     assert!(matches!(
         processed_transactions[0].status,
-        Status::Failed(_)
+        Status::Processed
     ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     assert!(matches!(
         processed_transactions[1].status,
         Status::Processed
     ));
 
-    //rpc.get_raw_transaction(&tx.txid(), None,None);
+    assert!(!processed_transactions[1].rollback_status);
 
     assert_eq!(first_utxo_after_block, first_utxo_before_block);
 

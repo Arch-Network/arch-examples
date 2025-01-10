@@ -39,7 +39,7 @@ fn test() {
     loop {
         let anchoring = generate_anchoring_psbt(&account_pubkey);
 
-        let btc_block_hash = mine_block();
+        let _ = mine_block();
 
         let increase_istruction = get_counter_increase_instruction(
             &program_pubkey,
@@ -52,7 +52,7 @@ fn test() {
 
         let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
 
-        let block_transactions = build_and_send_block(vec![transaction]);
+        let _block_transactions = build_and_send_block(vec![transaction]);
 
         let second_increase_istruction = get_counter_increase_instruction(
             &program_pubkey,
@@ -68,8 +68,8 @@ fn test() {
             vec![second_increase_istruction],
         );
 
-        let second_block_transactions = build_and_send_block(vec![second_transaction]);
+        let _second_block_transactions = build_and_send_block(vec![second_transaction]);
 
-        let btc_block_hash = mine_block();
+        let _ = mine_block();
     }
 }

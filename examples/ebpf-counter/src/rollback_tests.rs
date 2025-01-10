@@ -8,16 +8,17 @@ use arch_sdk::{
     constants::{
         BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, MINING_ADDRESS,
-        PROGRAM_FILE_PATH,
+        NODE1_ADDRESS, PROGRAM_FILE_PATH,
     },
     helper::{
         build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start, print_title, try_deploy_program,
+        log_scenario_end, log_scenario_start, print_title, read_account_info, try_deploy_program,
     },
     processed_transaction::Status,
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
+use electrs_client::ElectrsClient;
 use serial_test::serial;
 
 use crate::{
@@ -195,11 +196,6 @@ fn single_utxo_rbf_two_accounts() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_some());
 
-    let userpass = Auth::UserPass(
-        BITCOIN_NODE_USERNAME.to_string(),
-        BITCOIN_NODE_PASSWORD.to_string(),
-    );
-
     println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
 
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
@@ -240,7 +236,7 @@ fn single_utxo_rbf_two_accounts() {
         Status::Failed { .. }
     ));
 
-    let btc_block_hash = mine_block();
+    let _ = mine_block();
 
     println!("\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
 
@@ -252,8 +248,6 @@ fn single_utxo_rbf_two_accounts() {
 
     assert_eq!(first_account_data, CounterData::new(1, 1));
     assert_eq!(second_account_data, CounterData::new(2, 1));
-
-    //let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
     log_scenario_end(23, &format!("{:?}", first_account_data));
 }
@@ -563,7 +557,7 @@ fn rbf_orphan_arch_txs() {
         Status::Failed { .. }
     ));
 
-    let btc_block_hash = mine_block();
+    let _ = mine_block();
 
     println!("\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
 
@@ -586,6 +580,31 @@ fn rbf_orphan_arch_txs() {
             first_account_data, second_account_data
         ),
     );
+}
+
+#[ignore]
+#[serial]
+#[test]
+fn test_read_account_info() {
+    // First account : AccountInfoResult { owner: Pubkey([151, 101, 133, 101, 113, 47, 35, 250, 185, 174, 107, 254, 141, 172, 6, 125, 5, 178, 115, 102, 66, 8, 207, 195, 253, 235, 90, 16, 21, 124, 164, 102]), data: [2, 0, 1, 0], utxo: "be1663818e61dd78150973981820ee7cd315f3a09fef5ab35c153583c518c85d:1", is_executable: false, tag: "c4d2b3fd5cfca2f9213e0929624e792880cb02233d4ec0f02055f2d2cf90b834" }
+    // Second account : AccountInfoResult { owner: Pubkey([151, 101, 133, 101, 113, 47, 35, 250, 185, 174, 107, 254, 141, 172, 6, 125, 5, 178, 115, 102, 66, 8, 207, 195, 253, 235, 90, 16, 21, 124, 164, 102]), data: [1, 0, 1, 0], utxo: "f42320baa993433c7ab81f089df0a7644f104042614b4fe5222453d0b87609b4:0", is_executable: false, tag: "3744a83e37d34b165da85b64711450c19ea192eadfc647714ce2e228b2b7ccb2" }
+
+    let electrs_client = ElectrsClient::new("http://127.0.0.1:3002".to_string());
+    let outspend = electrs_client
+        .get_tx_outspend(
+            "a539fd23f67ad017009c58c25a0c2d15fb2a67eb9892d05f222fcb30a5dc90eb".to_string(),
+            0,
+        )
+        .unwrap();
+    println!("Outspend : {:?}", outspend);
+
+    let outspend = electrs_client
+        .get_tx_outspend(
+            "cc7840642e90a54b35ede597b696c7eb3739c731e7168e8a59db28c315a60585".to_string(),
+            0,
+        )
+        .unwrap();
+    println!("Outspend : {:?}", outspend);
 }
 
 #[ignore]
@@ -725,10 +744,16 @@ fn rbf_reorg() {
 
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
+    println!(
+        "First account data : {:?}",
+        read_account_info(NODE1_ADDRESS, account_pubkey).unwrap()
+    );
+    println!(
+        "Second account data : {:?}",
+        read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap()
+    );
     assert_eq!(first_account_data, CounterData::new(1, 1));
     assert_eq!(second_account_data, CounterData::new(2, 1));
-    println!("First account data : {:?}", first_account_data);
-    println!("Second account data : {:?}", second_account_data);
 
     let userpass = Auth::UserPass(
         BITCOIN_NODE_USERNAME.to_string(),
@@ -780,8 +805,14 @@ fn rbf_reorg() {
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
-    println!("First account data : {:?}", first_account_data);
-    println!("Second account data : {:?}", second_account_data);
+    println!(
+        "First account : {:?}",
+        read_account_info(NODE1_ADDRESS, account_pubkey).unwrap()
+    );
+    println!(
+        "Second account : {:?}",
+        read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap()
+    );
 
     assert_eq!(first_account_data, CounterData::new(3, 1));
     assert_eq!(second_account_data, CounterData::new(1, 1));

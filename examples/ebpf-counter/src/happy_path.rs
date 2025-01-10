@@ -1,5 +1,11 @@
 use std::str::FromStr;
 
+use crate::{
+    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
+    rollback_tests::mine_block,
+    ELF_PATH,
+};
 use arch_sdk::{
     constants::{
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, PROGRAM_FILE_PATH,
@@ -12,13 +18,6 @@ use arch_sdk::{
 };
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serial_test::serial;
-
-use crate::{
-    counter_helpers::{generate_anchoring_psbt, get_account_counter},
-    counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
-    rollback_tests::mine_block,
-    ELF_PATH,
-};
 
 #[ignore]
 #[serial]
@@ -240,7 +239,7 @@ fn counter_init_and_inc_anchored() {
         Client::new(BITCOIN_NODE_ENDPOINT, userpass).expect("rpc shouldn not fail to be initiated");
     println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
 
-    let tx_info = rpc
+    let _tx_info = rpc
         .get_raw_transaction_info(
             &bitcoin::Txid::from_str(&processed_transactions[0].bitcoin_txid.clone().unwrap())
                 .unwrap(),
@@ -288,7 +287,7 @@ fn counter_init_and_inc_anchored() {
 
     println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
 
-    let tx_info = rpc
+    let _tx_info = rpc
         .get_raw_transaction_info(
             &bitcoin::Txid::from_str(
                 &second_processed_transactions[0]
