@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 arch_program = { path = "../../program" }
-ebpf-counter = { path = "../ebpf-counter" }
 arch_sdk = { path = "../../sdk" }
 fungible-token-standard-program = { path = "./program", features = [
   "no-entrypoint",

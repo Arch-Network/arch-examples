@@ -7,7 +7,6 @@ edition = "2021"
 arch_sdk = { path = "../../sdk" }
 arch_program = { path = "../../program" }
 bip322 = "0.0.9"
-ebpf-counter =  { path = "../ebpf-counter" }
 bitcoincore-rpc = "0.19.0"
 hex = "0.4.3"
 borsh = { version = "1.4.0", features = ["derive"] }
