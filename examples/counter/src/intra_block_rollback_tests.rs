@@ -1,9 +1,10 @@
 use arch_sdk::{
-    constants::PROGRAM_FILE_PATH,
+    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
     helper::{
-        build_and_send_block, build_transaction, init_logging, log_scenario_start, print_title,
-        try_deploy_program,
+        build_and_send_block, build_transaction, get_processed_transaction, init_logging,
+        log_scenario_start, print_title, try_deploy_program,
     },
+    processed_transaction::Status,
 };
 use serial_test::serial;
 
@@ -71,5 +72,56 @@ fn test() {
         let _second_block_transactions = build_and_send_block(vec![second_transaction]);
 
         let _ = mine_block();
+    }
+}
+
+#[ignore]
+#[serial]
+#[test]
+fn test_intra_block_tx_cache() {
+    init_logging();
+
+    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+
+    print_title("First Counter Initialization and increase", 5);
+
+    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+
+    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let second_anchoring = generate_anchoring_psbt(&account_pubkey);
+
+    let increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        None,
+    );
+
+    let second_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        false,
+        false,
+        Some((
+            second_anchoring.0.clone(),
+            second_anchoring.1.clone(),
+            false,
+        )),
+        None,
+    );
+
+    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+
+    let second_transaction =
+        build_transaction(vec![account_keypair], vec![second_increase_istruction]);
+
+    let block_transactions = build_and_send_block(vec![transaction, second_transaction]);
+
+    for txid in block_transactions {
+        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid).unwrap();
+        assert!(matches!(processed_tx.status, Status::Processed));
+        assert!(!processed_tx.rollback_status);
     }
 }

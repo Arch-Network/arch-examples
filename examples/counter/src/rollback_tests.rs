@@ -615,7 +615,7 @@ fn rbf_reorg() {
 
     log_scenario_start(25,
         "2 Counters, same utxo replaced by a greater fee, w/ orphan arch tx",
-        "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Sane utxo is then used to update another account in RBF"
+        "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Same utxo is then used to update another account in RBF"
     );
 
     connect_nodes();
