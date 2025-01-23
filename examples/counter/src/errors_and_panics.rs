@@ -655,7 +655,7 @@ fn counter_init_and_two_inc_anchored_fail() {
         &account_pubkey,
         false,
         false,
-        Some((anchoring_2.0, anchoring_2.1, false)),
+        None,
         None,
     );
 
@@ -672,8 +672,10 @@ fn counter_init_and_two_inc_anchored_fail() {
 
     assert!(matches!(
         processed_transactions[0].status,
-        Status::Failed(_)
+        Status::Processed
     ));
+
+    assert!(processed_transactions[0].rollback_status);
 
     println!();
 
