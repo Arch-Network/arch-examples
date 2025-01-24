@@ -1,5 +1,6 @@
+[workspace]
 [package]
-name = "fungible-token-standard-program"
+name = "pda_program"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,10 +9,6 @@ edition = "2021"
 [dependencies]
 arch_program = { path = "../../../program" }
 borsh = { version = "1.5.1", features = ["derive"] }
-bitcoin = { version = "0.31.0", features = ["serde"] }
 
 [lib]
 crate-type = ["cdylib", "lib"]
-
-[features]
-no-entrypoint = []

@@ -1,3 +1,4 @@
+[workspace]
 [package]
 name = "create-new-account-program"
 version = "0.1.0"

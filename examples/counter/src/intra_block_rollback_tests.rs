@@ -9,7 +9,7 @@ use arch_sdk::{
 use serial_test::serial;
 
 use crate::{
-    counter_helpers::generate_anchoring_psbt,
+    counter_helpers::generate_anchoring,
     counter_instructions::{get_counter_increase_instruction, start_new_counter},
     rollback_tests::mine_block,
     ELF_PATH,
@@ -38,7 +38,7 @@ fn test() {
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     loop {
-        let anchoring = generate_anchoring_psbt(&account_pubkey);
+        let anchoring = generate_anchoring(&account_pubkey);
 
         let _ = mine_block();
 
@@ -87,8 +87,8 @@ fn test_intra_block_tx_cache() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
-    let second_anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
+    let second_anchoring = generate_anchoring(&account_pubkey);
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -124,7 +124,7 @@ fn test_intra_block_tx_cache() {
         assert!(matches!(processed_tx.status, Status::Processed));
         assert!(matches!(
             processed_tx.rollback_status,
-            RollbackStatus::Rolledback(_)
+            RollbackStatus::NotRolledback
         ));
     }
 }

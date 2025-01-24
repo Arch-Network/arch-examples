@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::{
-    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_helpers::{generate_anchoring, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     rollback_tests::mine_block,
     ELF_PATH,
@@ -195,7 +195,7 @@ fn counter_init_and_inc_anchored() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     mine_block();
 

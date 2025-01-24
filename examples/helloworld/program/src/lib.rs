@@ -43,6 +43,8 @@ pub fn process_instruction(
     let account_iter = &mut accounts.iter();
     let account = next_account_info(account_iter)?;
 
+    assert!(account.is_writable);
+    assert!(account.is_signer);
     msg!("account {:?}", account);
 
     // Deserialize the instruction data into our params struct

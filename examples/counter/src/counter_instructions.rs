@@ -1,7 +1,7 @@
 use arch_program::account::AccountMeta;
 use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
-use arch_program::system_instruction::SystemInstruction;
+use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
 use arch_sdk::constants::NODE1_ADDRESS;
@@ -32,7 +32,7 @@ pub(crate) fn start_new_counter(
     );
 
     let (txid, _) = sign_and_send_instruction(
-        SystemInstruction::new_create_account_instruction(
+        system_instruction::create_account(
             hex::decode(txid).unwrap().try_into().unwrap(),
             vout,
             account_pubkey,

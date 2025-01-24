@@ -4,23 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.75"
 arch_program = { path = "../../program" }
-arch_sdk = { path = "../../sdk" }
-fungible-token-standard-program = { path = "./program", features = [
-  "no-entrypoint",
-] }
-
-bitcoincore-rpc = "0.18.0"
+borsh = "1.5.3"
 hex = "0.4.3"
-borsh = { version = "1.4.0", features = ["derive"] }
+arch_sdk = { path = "../../sdk" }
 bitcoin = { version = "0.32.3", features = ["serde"] }
-log = "0.4"
-anyhow = "1.0.82"
-env_logger = "0.10"
-termsize = "0.1.9"
-
-[dev-dependencies]
-serial_test = "3.1.1"
-
-[lib]
-path = "src/lib.rs"
+rand = "0.8.5"

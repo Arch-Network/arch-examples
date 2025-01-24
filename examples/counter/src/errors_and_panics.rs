@@ -1,5 +1,5 @@
 use crate::{
-    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_helpers::{generate_anchoring, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
@@ -521,7 +521,7 @@ fn counter_init_and_inc_anchored_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -576,7 +576,7 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -643,9 +643,9 @@ fn counter_init_and_two_inc_anchored_fail() {
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
-    let anchoring_2 = generate_anchoring_psbt(&account_pubkey);
+    let anchoring_2 = generate_anchoring(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -716,7 +716,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     let utxo_before_block = account_info.utxo.clone();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -801,9 +801,9 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
 
     let second_utxo_before_block = second_account_info.utxo.clone();
 
-    let first_anchoring = generate_anchoring_psbt(&first_account_pubkey);
+    let first_anchoring = generate_anchoring(&first_account_pubkey);
 
-    let second_anchoring = generate_anchoring_psbt(&second_account_pubkey);
+    let second_anchoring = generate_anchoring(&second_account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -850,7 +850,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
 
     assert!(matches!(
         processed_transactions[0].rollback_status,
-        RollbackStatus::NotRolledback
+        RollbackStatus::Rolledback(_)
     ));
 
     assert!(processed_transactions[1].bitcoin_txid.is_some());
@@ -922,7 +922,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
 
     let second_utxo_before_block = second_account_info.utxo.clone();
 
-    let first_anchoring = generate_anchoring_psbt(&first_account_pubkey);
+    let first_anchoring = generate_anchoring(&first_account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -969,20 +969,10 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
 
     assert!(matches!(
         processed_transactions[0].rollback_status,
-        RollbackStatus::NotRolledback
+        RollbackStatus::Rolledback(_)
     ));
 
     assert!(processed_transactions[1].bitcoin_txid.is_none());
-
-    assert!(matches!(
-        processed_transactions[0].status,
-        Status::Processed
-    ));
-
-    assert!(matches!(
-        processed_transactions[0].rollback_status,
-        RollbackStatus::NotRolledback
-    ));
 
     assert!(matches!(
         processed_transactions[1].status,

@@ -22,7 +22,7 @@ use electrs_client::ElectrsClient;
 use serial_test::serial;
 
 use crate::{
-    counter_helpers::{generate_anchoring_psbt, get_account_counter},
+    counter_helpers::{generate_anchoring, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
@@ -153,7 +153,7 @@ fn single_utxo_rbf_two_accounts() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -279,7 +279,7 @@ fn single_utxo_rbf_three_accounts() {
     let (third_account_pubkey, third_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -441,7 +441,7 @@ fn rbf_orphan_arch_txs() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -631,7 +631,7 @@ fn rbf_reorg() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let anchoring = generate_anchoring_psbt(&account_pubkey);
+    let anchoring = generate_anchoring(&account_pubkey);
 
     let btc_block_hash = mine_block();
 

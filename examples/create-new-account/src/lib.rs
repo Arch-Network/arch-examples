@@ -62,7 +62,7 @@ pub fn create_new_account(program_id: Pubkey, account_pubkey: Pubkey, name: Stri
     let secp = Secp256k1::new();
     let (secret_key, _) = secp.generate_keypair(&mut OsRng);
     let account_keypair = Keypair::from_secret_key(&secp, &secret_key);
-    let account_pubkey =
+    let _account_pubkey =
         Pubkey::from_slice(&XOnlyPublicKey::from_keypair(&account_keypair).0.serialize());
     let (txid, _) = sign_and_send_instruction(instruction, vec![account_keypair])?;
 

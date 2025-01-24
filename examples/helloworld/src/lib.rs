@@ -1,15 +1,11 @@
 /// Running Tests
 #[cfg(test)]
 mod tests {
-    use arch_program::{
-        account::AccountMeta, instruction::Instruction, system_instruction::SystemInstruction,
-        utxo::UtxoMeta,
-    };
+    use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
     use arch_sdk::constants::*;
     use arch_sdk::helper::*;
     use arch_sdk::processed_transaction::Status;
-    use bitcoin::Transaction;
     use borsh::{BorshDeserialize, BorshSerialize};
     use serial_test::serial;
 
@@ -67,7 +63,7 @@ mod tests {
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_create_account_instruction(
+            system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 first_account_pubkey,
@@ -89,15 +85,12 @@ mod tests {
         instruction_data.extend(program_pubkey.serialize());
 
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_assign_ownership_instruction(
-                first_account_pubkey,
-                program_pubkey,
-            ),
+            system_instruction::assign(first_account_pubkey, program_pubkey),
             vec![first_account_keypair],
         )
         .expect("signing and sending a transaction should not fail");
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
+        let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
             .expect("get processed transaction should not fail");
 
         let account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
@@ -106,8 +99,6 @@ mod tests {
         println!("\x1b[32m Step 3/4 Successful :\x1b[0m Account ownership successfully assigned to the program",);
 
         /* ---------- CALLING HELLO WORLD PROGRAM WITH THE CREATED ACCOUNT ---------- */
-
-        let fees_psbt = hex::decode(prepare_fees()).unwrap();
 
         let (txid, _) = sign_and_send_instruction(
             Instruction {
@@ -119,7 +110,7 @@ mod tests {
                 }],
                 data: borsh::to_vec(&HelloWorldParams {
                     name: "arch".to_string(),
-                    tx_hex: fees_psbt,
+                    tx_hex: hex::decode(prepare_fees()).unwrap(),
                 })
                 .unwrap(),
             },
@@ -166,7 +157,7 @@ mod tests {
         let (txid, vout) = send_utxo(program_pubkey);
 
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_create_account_instruction(
+            system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 program_pubkey,
@@ -199,7 +190,7 @@ mod tests {
         );
 
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_deploy_instruction(program_pubkey),
+            system_instruction::deploy(program_pubkey),
             vec![program_keypair],
         )
         .expect("signing and sending a transaction should not fail");
@@ -220,7 +211,7 @@ mod tests {
 
         // retract the program from being executable
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_retract_instruction(program_pubkey),
+            system_instruction::retract(program_pubkey),
             vec![program_keypair],
         )
         .expect("signing and sending a transaction should not fail");
@@ -236,7 +227,7 @@ mod tests {
 
         // write 10 bytes to the program
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_write_bytes_instruction(
+            system_instruction::write_bytes(
                 read_account_info(NODE1_ADDRESS, program_pubkey)
                     .unwrap()
                     .data
@@ -257,7 +248,7 @@ mod tests {
 
         // deploy the program
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_deploy_instruction(program_pubkey),
+            system_instruction::deploy(program_pubkey),
             vec![program_keypair],
         )
         .expect("signing and sending a transaction should not fail");
@@ -286,7 +277,7 @@ mod tests {
 
         // deploy the program again
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_deploy_instruction(program_pubkey),
+            system_instruction::deploy(program_pubkey),
             vec![program_keypair],
         )
         .expect("signing and sending a transaction should not fail");
@@ -312,7 +303,7 @@ mod tests {
         );
 
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_create_account_instruction(
+            system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 first_account_pubkey,
@@ -329,10 +320,7 @@ mod tests {
         instruction_data.extend(program_pubkey.serialize());
 
         let (txid, _) = sign_and_send_instruction(
-            SystemInstruction::new_assign_ownership_instruction(
-                first_account_pubkey,
-                program_pubkey,
-            ),
+            system_instruction::assign(first_account_pubkey, program_pubkey),
             vec![first_account_keypair],
         )
         .expect("signing and sending a transaction should not fail");
