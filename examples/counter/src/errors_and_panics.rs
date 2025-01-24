@@ -9,7 +9,7 @@ use arch_sdk::{
         build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
         log_scenario_end, log_scenario_start, read_account_info, try_deploy_program,
     },
-    processed_transaction::Status,
+    processed_transaction::{RollbackStatus, Status},
 };
 
 use serial_test::serial;
@@ -545,7 +545,10 @@ fn counter_init_and_inc_anchored_fail() {
     //     Status::Failed(_)
     // ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::Rolledback(_)
+    ));
 
     println!();
 
@@ -609,7 +612,10 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
     //     Status::Failed(_)
     // ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::Rolledback(_)
+    ));
 
     println!();
 
@@ -675,7 +681,10 @@ fn counter_init_and_two_inc_anchored_fail() {
         Status::Processed
     ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::Rolledback(_)
+    ));
 
     println!();
 
@@ -743,7 +752,10 @@ fn counter_init_and_two_inc_second_anchored_fail() {
     //     Status::Failed(_)
     // ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::Rolledback(_)
+    ));
 
     println!();
 
@@ -836,7 +848,10 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         Status::Processed
     ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::NotRolledback
+    ));
 
     assert!(processed_transactions[1].bitcoin_txid.is_some());
 
@@ -845,7 +860,10 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         Status::Processed
     ));
 
-    assert!(!processed_transactions[1].rollback_status);
+    assert!(matches!(
+        processed_transactions[1].rollback_status,
+        RollbackStatus::NotRolledback
+    ));
 
     //rpc.get_raw_transaction(&tx.txid(), None,None);
 
@@ -949,7 +967,10 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         Status::Processed
     ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::NotRolledback
+    ));
 
     assert!(processed_transactions[1].bitcoin_txid.is_none());
 
@@ -958,14 +979,20 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         Status::Processed
     ));
 
-    assert!(processed_transactions[0].rollback_status);
+    assert!(matches!(
+        processed_transactions[0].rollback_status,
+        RollbackStatus::NotRolledback
+    ));
 
     assert!(matches!(
         processed_transactions[1].status,
         Status::Processed
     ));
 
-    assert!(!processed_transactions[1].rollback_status);
+    assert!(matches!(
+        processed_transactions[1].rollback_status,
+        RollbackStatus::NotRolledback
+    ));
 
     assert_eq!(first_utxo_after_block, first_utxo_before_block);
 

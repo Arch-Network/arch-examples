@@ -4,7 +4,7 @@ use arch_sdk::{
         build_and_send_block, build_transaction, get_processed_transaction, init_logging,
         log_scenario_start, print_title, try_deploy_program,
     },
-    processed_transaction::Status,
+    processed_transaction::{RollbackStatus, Status},
 };
 use serial_test::serial;
 
@@ -122,6 +122,9 @@ fn test_intra_block_tx_cache() {
     for txid in block_transactions {
         let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid).unwrap();
         assert!(matches!(processed_tx.status, Status::Processed));
-        assert!(!processed_tx.rollback_status);
+        assert!(matches!(
+            processed_tx.rollback_status,
+            RollbackStatus::Rolledback(_)
+        ));
     }
 }
