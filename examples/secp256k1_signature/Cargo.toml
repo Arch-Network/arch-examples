@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-arch_sdk = { path = "../../sdk" }
-arch_program = { path = "../../program" }
+arch_program = "0.3.2"
+arch_sdk = "0.3.2"
 bip322 = "0.0.9"
 bitcoincore-rpc = "0.19.0"
 hex = "0.4.3"
