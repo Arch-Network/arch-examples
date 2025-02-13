@@ -5,8 +5,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+arch_program = { path = "../../../program" }
 borsh = { version = "1.5.3" }
-arch_program = "0.3.2"
 
 [lib]
 crate-type = ["cdylib", "lib"]

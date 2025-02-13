@@ -185,8 +185,9 @@ fn single_utxo_rbf_two_accounts() {
     let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
 
     println!(
-        "First increase processed transaction id : {}",
-        processed_transactions[0].txid()
+        "First increase processed transaction id : {}\nStatus: {:?}",
+        processed_transactions[0].txid(),
+        processed_transactions[0].status
     );
 
     assert!(!matches!(
