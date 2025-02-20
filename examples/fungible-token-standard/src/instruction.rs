@@ -16,7 +16,7 @@ pub(crate) fn create_new_account_instruction() -> Result<(Keypair, Pubkey, Instr
 
     let (txid, vout) = send_utxo(account_pubkey);
 
-    let account_creation_instruction = SystemInstruction::new_create_account_instruction(
+    let account_creation_instruction = system_instruction::create_account(
         hex::decode(txid).unwrap().try_into().unwrap(),
         vout,
         account_pubkey,

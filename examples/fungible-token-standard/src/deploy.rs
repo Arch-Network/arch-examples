@@ -89,7 +89,7 @@ fn deploy_standard_program() {
     let (txid, vout) = send_utxo(account_pubkey);
 
     let (txid, _) = sign_and_send_instruction(
-        SystemInstruction::new_create_account_instruction(
+        &system_instruction::create_account(
             hex::decode(txid).unwrap().try_into().unwrap(),
             vout,
             account_pubkey,

@@ -41,7 +41,7 @@ mod tests {
         println!("{}:{} {:?}", txid, vout, hex::encode(program_pubkey));
 
         let (txid, instruction_hash) = sign_and_send_instruction(
-            SystemInstruction::new_create_account_instruction(
+            &system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 program_pubkey.clone(),
@@ -96,7 +96,7 @@ mod tests {
         println!("{}:{} {:?}", txid, vout, hex::encode(caller_pubkey));
 
         let (txid, instruction_hash) = sign_and_send_instruction(
-            SystemInstruction::new_create_account_instruction(
+            &system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 caller_pubkey.clone(),

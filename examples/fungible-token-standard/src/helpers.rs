@@ -75,14 +75,14 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
         txid, vout
     );
 
-    let account_creation_instruction = SystemInstruction::new_create_account_instruction(
+    let account_creation_instruction = system_instruction::create_account(
         hex::decode(txid).unwrap().try_into().unwrap(),
         vout,
         mint_pubkey,
     );
 
     let ownership_transfer_instruction =
-        SystemInstruction::new_assign_ownership_instruction(mint_pubkey, program_pubkey);
+        system_instruction::assign_ownership(mint_pubkey, program_pubkey);
 
     let test_mint_input = InitializeMintInput::new(
         mint_owner_pubkey.serialize(),
@@ -153,7 +153,7 @@ pub(crate) fn provide_empty_account_to_program(
     );
 
     let (txid, _) = sign_and_send_instruction(
-        SystemInstruction::new_create_account_instruction(
+        &system_instruction::create_account(
             hex::decode(txid).unwrap().try_into().unwrap(),
             vout,
             account_pubkey,
@@ -210,7 +210,7 @@ pub(crate) fn create_balance_account(
     let (txid, vout) = send_utxo(balance_account_pubkey);
 
     let (txid, _) = sign_and_send_instruction(
-        SystemInstruction::new_create_account_instruction(
+        &system_instruction::create_account(
             hex::decode(txid).unwrap().try_into().unwrap(),
             vout,
             balance_account_pubkey,

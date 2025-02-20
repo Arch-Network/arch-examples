@@ -8,7 +8,7 @@ use arch_program::{
     program::{invoke, next_account_info, set_transaction_to_sign},
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::SystemInstruction,
+    system_instruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };
@@ -50,7 +50,7 @@ pub fn process_instruction(
     // Step 3: Create the new account using Cross-Program Invocation (CPI)
     // This calls the system program to actually create the account
     invoke(
-        &SystemInstruction::new_create_account_instruction(
+        &system_instruction::create_account(
             params.utxo.txid().try_into().unwrap(),
             params.utxo.vout(),
             *new_account.key,

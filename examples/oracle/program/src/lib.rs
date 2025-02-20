@@ -11,7 +11,6 @@ use arch_program::{
     },
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::SystemInstruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };

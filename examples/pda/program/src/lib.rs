@@ -12,7 +12,7 @@ use arch_program::{
     },
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::SystemInstruction,
+    system_instruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };
@@ -44,7 +44,7 @@ fn process_instruction(
     msg!("starting cpi call to create account");
 
     invoke_signed(
-        &SystemInstruction::new_create_account_instruction(
+        &system_instruction::create_account(
             params.utxo.txid().try_into().unwrap(),
             params.utxo.vout(),
             vault_pda.key.clone(),
