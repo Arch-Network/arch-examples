@@ -18,7 +18,6 @@ use arch_sdk::{
 };
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serial_test::serial;
-
 #[ignore]
 #[serial]
 #[test]
