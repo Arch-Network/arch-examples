@@ -5,6 +5,7 @@ mod tests {
         account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
         system_instruction::SystemInstruction, utxo::UtxoMeta,
     };
+    use arch_test_sdk::constants::BITCOIN_NETWORK;
     use bitcoincore_rpc::{Auth, Client};
     use common::constants::*;
 
@@ -112,11 +113,13 @@ mod tests {
         let mut old_feerate = 0;
 
         loop {
-            let body: Value =
-                reqwest::blocking::get("https://mempool.space/api/v1/fees/recommended")
-                    .unwrap()
-                    .json()
-                    .unwrap();
+            let body: Value = reqwest::blocking::get(&arch_sdk::constants::get_api_endpoint_url(
+                BITCOIN_NETWORK,
+                "fees/recommended",
+            ))
+            .unwrap()
+            .json()
+            .unwrap();
             let feerate = body.get("fastestFee").unwrap().as_u64().unwrap();
 
             if old_feerate != feerate {

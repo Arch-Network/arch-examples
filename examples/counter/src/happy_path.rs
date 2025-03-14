@@ -6,15 +6,14 @@ use crate::{
     rollback_tests::mine_block,
     ELF_PATH,
 };
-use arch_sdk::{
+use arch_sdk::{build_transaction, Status};
+use arch_test_sdk::{
     constants::{
-        BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, PROGRAM_FILE_PATH,
+        BITCOIN_NETWORK, BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME,
+        PROGRAM_FILE_PATH,
     },
-    helper::{
-        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start, try_deploy_program,
-    },
-    processed_transaction::Status,
+    helper::{deploy_program, send_transactions_and_wait},
+    logging::{init_logging, log_scenario_end, log_scenario_start},
 };
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serial_test::serial;
@@ -29,7 +28,11 @@ fn counter_initialization_test() {
         "Happy Path Scenario : deploying the counter program, then initializing the counter to (1,1) "
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -47,7 +50,11 @@ fn counter_init_and_inc_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it in a separate block "
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -60,11 +67,13 @@ fn counter_init_and_inc_test() {
         None,
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let _processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let block_transactions = send_transactions_and_wait(vec![transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -84,7 +93,11 @@ fn counter_init_and_inc_transaction_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same transaction, using two separate instructions"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -109,11 +122,10 @@ fn counter_init_and_inc_transaction_test() {
     let transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let _processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let block_transactions = send_transactions_and_wait(vec![transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -133,7 +145,11 @@ fn counter_init_and_inc_block_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same block, using two separate transactions"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -146,8 +162,11 @@ fn counter_init_and_inc_block_test() {
         None,
     );
 
-    let first_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
+    let first_transaction = build_transaction(
+        vec![account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -158,16 +177,18 @@ fn counter_init_and_inc_block_test() {
         None,
     );
 
-    let second_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_istruction]);
+    let second_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_istruction],
+        BITCOIN_NETWORK,
+    );
     println!(
         "TXIDS : first tx {}, second {}",
         first_transaction.txid(),
         second_transaction.txid()
     );
-    let block_transactions = build_and_send_block(vec![first_transaction, second_transaction]);
-
-    let _processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let block_transactions =
+        send_transactions_and_wait(vec![first_transaction, second_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -187,7 +208,11 @@ fn counter_init_and_inc_anchored() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -207,11 +232,13 @@ fn counter_init_and_inc_anchored() {
         Some(2500),
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "Processed transaction id : {}",
@@ -236,7 +263,13 @@ fn counter_init_and_inc_anchored() {
     );
     let rpc =
         Client::new(BITCOIN_NODE_ENDPOINT, userpass).expect("rpc shouldn not fail to be initiated");
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+        )
+    );
 
     let _tx_info = rpc
         .get_raw_transaction_info(
@@ -262,12 +295,10 @@ fn counter_init_and_inc_anchored() {
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let second_block_transactions = build_and_send_block(vec![second_transaction]);
-
-    let second_processed_transactions =
-        fetch_processed_transactions(second_block_transactions).unwrap();
+    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
     println!(
         "Processed transaction id : {}",
@@ -284,7 +315,16 @@ fn counter_init_and_inc_anchored() {
         Status::Failed { .. }
     ));
 
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &second_processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+        )
+    );
 
     let _tx_info = rpc
         .get_raw_transaction_info(

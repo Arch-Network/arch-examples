@@ -3,16 +3,16 @@ pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/clock_pro
 #[cfg(test)]
 mod clock_tests {
     use crate::ELF_PATH;
-    use arch_program::{account::AccountMeta, clock::Clock, system_instruction};
-    use arch_sdk::{
-        constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
+    use arch_program::{account::AccountMeta, clock::Clock};
+    use arch_test_sdk::{
+        constants::PROGRAM_FILE_PATH,
         helper::{
-            assign_ownership_to_program, generate_new_keypair, get_processed_transaction,
-            init_logging, log_scenario_start, read_account_info, send_utxo,
-            sign_and_send_instruction, try_deploy_program,
+            assign_ownership_to_program, create_account, deploy_program, read_account_info,
+            sign_and_send_instruction,
         },
+        logging::{init_logging, log_scenario_start},
     };
-    use borsh::{BorshDeserialize, BorshSerialize};
+    use borsh::BorshDeserialize;
     #[ignore]
     #[test]
     pub fn clock_test() {
@@ -24,56 +24,38 @@ mod clock_tests {
             "Deploying the clock program, then dumping the clock data into an account",
         );
 
-        let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "Clock-test").unwrap();
-
-        let (account_key_pair, account_pubkey, address) = generate_new_keypair();
-
-        let (txid, vout) = send_utxo(account_pubkey);
-        println!(
-            "\x1b[32m Step 1/3 Successful :\x1b[0m Utxo sent for account, creation {}:{}",
-            txid, vout
+        let program_pubkey = deploy_program(
+            ELF_PATH.to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Clock-test".to_string(),
         );
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::create_account(
-                hex::decode(txid).unwrap().try_into().unwrap(),
-                vout,
-                account_pubkey,
-            ),
-            vec![account_key_pair],
-        )
-        .expect("signing and sending a transaction should not fail");
+
+        let (account_key_pair, account_pubkey, address) = create_account();
 
         println!(
-            "\x1b[32m Step 2/3 Successful :\x1b[0m Account created with address, {:?}",
+            "\x1b[32m Step 1/2 Successful :\x1b[0m Account created with address, {:?}",
             account_pubkey.0
         );
-        let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
 
-        assign_ownership_to_program(&program_pubkey, account_pubkey, account_key_pair);
+        assign_ownership_to_program(program_pubkey, account_pubkey, account_key_pair);
 
         println!(
-            "\x1b[32m Step 3/3 Successful :\x1b[0m Ownership Successfully assigned to program!"
+            "\x1b[32m Step 2/2 Successful :\x1b[0m Ownership Successfully assigned to program!"
         );
 
-        let (txid, _) = sign_and_send_instruction(
-            arch_program::instruction::Instruction {
-                program_id: program_pubkey,
-                accounts: vec![AccountMeta {
-                    pubkey: account_pubkey,
-                    is_signer: true,
-                    is_writable: true,
-                }],
-                data: vec![],
-            },
-            vec![account_key_pair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        let instruction = arch_program::instruction::Instruction {
+            program_id: program_pubkey,
+            accounts: vec![AccountMeta {
+                pubkey: account_pubkey,
+                is_signer: true,
+                is_writable: true,
+            }],
+            data: vec![],
+        };
 
-        let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
+        let txid = sign_and_send_instruction(vec![instruction], vec![account_key_pair]);
 
-        let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
+        let account_info = read_account_info(account_pubkey);
 
         let mut account_info_data = account_info.data.as_slice();
 

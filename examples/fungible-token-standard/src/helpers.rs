@@ -71,8 +71,8 @@ pub(crate) fn try_create_mint_account(single_use_mint: bool) -> Result<Pubkey> {
     let (txid, vout) = send_utxo(mint_pubkey);
 
     println!(
-        "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for mint account UTXO successfully sent : https://mempool.dev.aws.archnetwork.xyz/tx/{} -- vout : {}",
-        txid, vout
+        "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for mint account UTXO successfully sent : {} -- vout : {}",
+        arch_sdk::constants::get_explorer_tx_url(BITCOIN_NETWORK, &txid), vout
     );
 
     let account_creation_instruction = system_instruction::create_account(

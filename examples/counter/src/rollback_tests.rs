@@ -4,17 +4,15 @@
 
 use std::{str::FromStr, thread, time::Duration};
 
-use arch_sdk::{
+use arch_sdk::{build_transaction, Status};
+use arch_test_sdk::{
     constants::{
-        BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
+        BITCOIN_NETWORK, BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, MINING_ADDRESS,
-        NODE1_ADDRESS, PROGRAM_FILE_PATH,
+        PROGRAM_FILE_PATH,
     },
-    helper::{
-        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start, print_title, read_account_info, try_deploy_program,
-    },
-    processed_transaction::Status,
+    helper::{deploy_program, read_account_info, send_transactions_and_wait},
+    logging::{init_logging, log_scenario_end, log_scenario_start, print_title},
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
@@ -142,7 +140,11 @@ fn single_utxo_rbf_two_accounts() {
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transaction should be rolled back"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -178,11 +180,13 @@ fn single_utxo_rbf_two_accounts() {
         Some(2500),
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "First increase processed transaction id : {}\nStatus: {:?}",
@@ -197,7 +201,13 @@ fn single_utxo_rbf_two_accounts() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_some());
 
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+        )
+    );
 
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -220,12 +230,10 @@ fn single_utxo_rbf_two_accounts() {
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let second_block_transactions = build_and_send_block(vec![second_transaction]);
-
-    let second_processed_transactions =
-        fetch_processed_transactions(second_block_transactions).unwrap();
+    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
     println!(
         "Second increase processed transaction id : {}",
@@ -239,7 +247,16 @@ fn single_utxo_rbf_two_accounts() {
 
     let _ = mine_block();
 
-    println!("\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &second_processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+        )
+    );
 
     thread::sleep(std::time::Duration::from_secs(10));
 
@@ -264,7 +281,11 @@ fn single_utxo_rbf_three_accounts() {
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transactions should be rolled back"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -305,11 +326,13 @@ fn single_utxo_rbf_three_accounts() {
         Some(5000),
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "First increase processed transaction id : {}",
@@ -323,7 +346,13 @@ fn single_utxo_rbf_three_accounts() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_some());
 
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+        )
+    );
 
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -346,12 +375,10 @@ fn single_utxo_rbf_three_accounts() {
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let second_block_transactions = build_and_send_block(vec![second_transaction]);
-
-    let second_processed_transactions =
-        fetch_processed_transactions(second_block_transactions).unwrap();
+    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
     println!(
         "Second increase processed transaction id : {}",
@@ -374,13 +401,13 @@ fn single_utxo_rbf_three_accounts() {
         None,
     );
 
-    let third_transaction =
-        build_transaction(vec![third_account_keypair], vec![third_increase_istruction]);
+    let third_transaction = build_transaction(
+        vec![third_account_keypair],
+        vec![third_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let third_block_transactions = build_and_send_block(vec![third_transaction]);
-
-    let third_processed_transactions =
-        fetch_processed_transactions(third_block_transactions).unwrap();
+    let third_processed_transactions = send_transactions_and_wait(vec![third_transaction]);
 
     println!(
         "Third increase processed transaction id : {} {:?}",
@@ -395,7 +422,16 @@ fn single_utxo_rbf_three_accounts() {
 
     let _btc_block_hash = mine_block();
 
-    println!("\x1b[1m\x1B[34m Third Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",third_processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m Third Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &third_processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+        )
+    );
 
     thread::sleep(std::time::Duration::from_secs(10));
 
@@ -431,7 +467,11 @@ fn rbf_orphan_arch_txs() {
         "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Sane utxo is then used to update another account in RBF"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -467,11 +507,13 @@ fn rbf_orphan_arch_txs() {
         Some(2500),
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "First increase processed transaction id : {}",
@@ -485,7 +527,13 @@ fn rbf_orphan_arch_txs() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_some());
 
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+        )
+    );
 
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -502,11 +550,13 @@ fn rbf_orphan_arch_txs() {
         None,
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "Second increase for first account processed transaction id : {}",
@@ -541,12 +591,10 @@ fn rbf_orphan_arch_txs() {
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let second_block_transactions = build_and_send_block(vec![second_transaction]);
-
-    let second_processed_transactions =
-        fetch_processed_transactions(second_block_transactions).unwrap();
+    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
     println!(
         "Second increase processed transaction id : {}",
@@ -560,7 +608,16 @@ fn rbf_orphan_arch_txs() {
 
     let _ = mine_block();
 
-    println!("\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &second_processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+        )
+    );
 
     thread::sleep(std::time::Duration::from_secs(10));
 
@@ -621,7 +678,11 @@ fn rbf_reorg() {
 
     connect_nodes();
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -657,11 +718,13 @@ fn rbf_reorg() {
         Some(2500),
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "First increase processed transaction id : {}",
@@ -677,7 +740,13 @@ fn rbf_reorg() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_some());
 
-    println!("\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+        )
+    );
 
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
@@ -721,12 +790,10 @@ fn rbf_reorg() {
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_istruction],
+        BITCOIN_NETWORK,
     );
 
-    let second_block_transactions = build_and_send_block(vec![second_transaction]);
-
-    let second_processed_transactions =
-        fetch_processed_transactions(second_block_transactions).unwrap();
+    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
     println!(
         "Second increase processed transaction id : {}",
@@ -738,7 +805,16 @@ fn rbf_reorg() {
         Status::Failed { .. }
     ));
 
-    println!("\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : https://mempool.space/testnet4/tx/{} \x1b[0m",second_processed_transactions[0].bitcoin_txid.clone().unwrap());
+    println!(
+        "\x1b[1m\x1B[34m Second Bitcoin transaction submitted :  : {} \x1b[0m",
+        arch_test_sdk::constants::get_explorer_tx_url(
+            BITCOIN_NETWORK,
+            &second_processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+        )
+    );
 
     thread::sleep(Duration::from_secs(5));
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
@@ -747,11 +823,11 @@ fn rbf_reorg() {
 
     println!(
         "First account data : {:?}",
-        read_account_info(NODE1_ADDRESS, account_pubkey).unwrap()
+        read_account_info(account_pubkey)
     );
     println!(
         "Second account data : {:?}",
-        read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap()
+        read_account_info(second_account_pubkey)
     );
     assert_eq!(first_account_data, CounterData::new(1, 1));
     assert_eq!(second_account_data, CounterData::new(2, 1));
@@ -784,11 +860,13 @@ fn rbf_reorg() {
         None,
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     println!(
         "Second increase for first account processed transaction id : {}",
@@ -806,13 +884,10 @@ fn rbf_reorg() {
     let first_account_data = get_account_counter(&account_pubkey).unwrap();
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
-    println!(
-        "First account : {:?}",
-        read_account_info(NODE1_ADDRESS, account_pubkey).unwrap()
-    );
+    println!("First account : {:?}", read_account_info(account_pubkey));
     println!(
         "Second account : {:?}",
-        read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap()
+        read_account_info(second_account_pubkey)
     );
 
     assert_eq!(first_account_data, CounterData::new(3, 1));

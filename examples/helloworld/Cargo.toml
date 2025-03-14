@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 arch_sdk = { path = "../../sdk" }
+arch_test_sdk = { path = "../../test_sdk" }
 arch_program = { path = "../../program" }
 
 bitcoincore-rpc = "0.18.0"

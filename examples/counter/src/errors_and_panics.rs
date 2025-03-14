@@ -3,15 +3,13 @@ use crate::{
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
-use arch_sdk::{
-    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        build_and_send_block, build_transaction, fetch_processed_transactions, init_logging,
-        log_scenario_end, log_scenario_start, read_account_info, try_deploy_program,
-    },
-    processed_transaction::{RollbackStatus, Status},
-};
 
+use arch_sdk::{build_transaction, RollbackStatus, Status};
+use arch_test_sdk::{
+    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+    helper::{deploy_program, read_account_info, send_transactions_and_wait},
+    logging::{init_logging, log_scenario_end, log_scenario_start},
+};
 use serial_test::serial;
 
 #[ignore]
@@ -25,18 +23,24 @@ fn counter_inc_single_instruction_fail() {
         "Initializing the counter to (1,1), then increasing it in a single instruction, the state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let increase_istruction =
         get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
-    let increase_transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -61,18 +65,24 @@ fn counter_inc_single_instruction_panic() {
         "Initializing the counter to (1,1), then increasing it in a single instruction, the state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
     let increase_istruction =
         get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
-    let increase_transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -97,7 +107,11 @@ fn counter_inc_two_instructions_1st_fail() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction failing. The state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -116,16 +130,15 @@ fn counter_inc_two_instructions_1st_fail() {
     let increase_transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let block_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
     assert!(matches!(
-        processed_transactions[0].status,
+        block_transactions[0].status,
         Status::Failed { .. }
     ));
 
@@ -145,7 +158,11 @@ fn counter_inc_two_instructions_2nd_fail() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction failing. The state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -164,11 +181,10 @@ fn counter_inc_two_instructions_2nd_fail() {
     let increase_transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -193,7 +209,11 @@ fn counter_inc_two_instructions_1st_panic() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction panicking. The state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -212,11 +232,10 @@ fn counter_inc_two_instructions_1st_panic() {
     let increase_transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -241,7 +260,11 @@ fn counter_inc_two_instructions_2nd_panic() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction panicking. The state shouldn't be updated"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -260,11 +283,10 @@ fn counter_inc_two_instructions_2nd_panic() {
     let increase_transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![increase_transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -289,7 +311,11 @@ fn counter_inc_two_transactions_1st_fail() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction failing. The state should be updated by 2nd transaction"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -305,18 +331,22 @@ fn counter_inc_two_transactions_1st_fail() {
         None,
     );
 
-    let first_increase_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
+    let first_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let second_increase_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_instruction]);
+    let second_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_instruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![
+    let processed_transactions = send_transactions_and_wait(vec![
         first_increase_transaction,
         second_increase_transaction,
     ]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -346,7 +376,11 @@ fn counter_inc_two_transactions_2nd_fail() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the second transaction failing. The state should be updated by 1st transaction"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -362,18 +396,22 @@ fn counter_inc_two_transactions_2nd_fail() {
     let second_increase_instruction =
         get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
 
-    let first_increase_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
+    let first_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let second_increase_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_instruction]);
+    let second_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_instruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![
+    let processed_transactions = send_transactions_and_wait(vec![
         first_increase_transaction,
         second_increase_transaction,
     ]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -403,7 +441,11 @@ fn counter_inc_two_transactions_1st_panic() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction panicking. The state should be updated by 2nd transaction"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -419,18 +461,22 @@ fn counter_inc_two_transactions_1st_panic() {
         None,
     );
 
-    let first_increase_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
+    let first_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let second_increase_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_instruction]);
+    let second_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_instruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![
+    let processed_transactions = send_transactions_and_wait(vec![
         first_increase_transaction,
         second_increase_transaction,
     ]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -460,7 +506,11 @@ fn counter_inc_two_transactions_2nd_panic() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction panicking. The state should be updated by 1st transaction"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -476,18 +526,22 @@ fn counter_inc_two_transactions_2nd_panic() {
     let second_increase_instruction =
         get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
 
-    let first_increase_transaction =
-        build_transaction(vec![account_keypair], vec![first_increase_istruction]);
+    let first_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let second_increase_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_instruction]);
+    let second_increase_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_instruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![
+    let processed_transactions = send_transactions_and_wait(vec![
         first_increase_transaction,
         second_increase_transaction,
     ]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
@@ -517,7 +571,11 @@ fn counter_init_and_inc_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -532,11 +590,13 @@ fn counter_init_and_inc_anchored_fail() {
         None,
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
@@ -572,7 +632,11 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, the second instruction should be rolled back, and the state shouldn't change"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -599,11 +663,10 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
     let transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
@@ -639,7 +702,11 @@ fn counter_init_and_two_inc_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a failing Bitcoin Transaction Anchoring, and a succeeding state only instruction, the entire Runtime transaction and the state shouldn't change"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
@@ -668,11 +735,10 @@ fn counter_init_and_two_inc_anchored_fail() {
     let transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
@@ -708,11 +774,15 @@ fn counter_init_and_two_inc_second_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a succeeding state only instruction, and a failing anchored instruction, the entire Runtime transaction and the state shouldn't change"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
+    let account_info = read_account_info(account_pubkey);
 
     let utxo_before_block = account_info.utxo.clone();
 
@@ -739,11 +809,10 @@ fn counter_init_and_two_inc_second_anchored_fail() {
     let transaction = build_transaction(
         vec![account_keypair],
         vec![first_increase_istruction, second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![transaction]);
-
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 
@@ -765,7 +834,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     assert_eq!(final_account_data, CounterData::new(1, 1));
 
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
+    let account_info = read_account_info(account_pubkey);
 
     let utxo_after_block = account_info.utxo.clone();
 
@@ -785,7 +854,11 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change. The second transaction will try to change another state with an anchoring it should succeed"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (first_account_pubkey, first_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
@@ -793,9 +866,9 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+    let first_account_info = read_account_info(first_account_pubkey);
 
-    let second_account_info = read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
+    let second_account_info = read_account_info(second_account_pubkey);
 
     let first_utxo_before_block = first_account_info.utxo.clone();
 
@@ -823,21 +896,24 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         None,
     );
 
-    let first_transaction =
-        build_transaction(vec![first_account_keypair], vec![first_increase_istruction]);
+    let first_transaction = build_transaction(
+        vec![first_account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![first_transaction, second_transaction]);
+    let processed_transactions =
+        send_transactions_and_wait(vec![first_transaction, second_transaction]);
 
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let first_account_info = read_account_info(first_account_pubkey);
 
-    let first_account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
-
-    let second_account_info = read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
+    let second_account_info = read_account_info(second_account_pubkey);
 
     let first_utxo_after_block = first_account_info.utxo.clone();
 
@@ -906,7 +982,11 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change. The second transaction will try to change another state without an anchoring it should succeed"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     let (first_account_pubkey, first_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
@@ -914,9 +994,9 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let (second_account_pubkey, second_account_keypair) =
         start_new_counter(&program_pubkey, 1, 1).unwrap();
 
-    let first_account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+    let first_account_info = read_account_info(first_account_pubkey);
 
-    let second_account_info = read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
+    let second_account_info = read_account_info(second_account_pubkey);
 
     let first_utxo_before_block = first_account_info.utxo.clone();
 
@@ -942,21 +1022,24 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         None,
     );
 
-    let first_transaction =
-        build_transaction(vec![first_account_keypair], vec![first_increase_istruction]);
+    let first_transaction = build_transaction(
+        vec![first_account_keypair],
+        vec![first_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
     let second_transaction = build_transaction(
         vec![second_account_keypair],
         vec![second_increase_instruction],
+        BITCOIN_NETWORK,
     );
 
-    let block_transactions = build_and_send_block(vec![first_transaction, second_transaction]);
+    let processed_transactions =
+        send_transactions_and_wait(vec![first_transaction, second_transaction]);
 
-    let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+    let first_account_info = read_account_info(first_account_pubkey);
 
-    let first_account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
-
-    let second_account_info = read_account_info(NODE1_ADDRESS, second_account_pubkey).unwrap();
+    let second_account_info = read_account_info(second_account_pubkey);
 
     let first_utxo_after_block = first_account_info.utxo.clone();
 

@@ -2,15 +2,15 @@
 #[cfg(test)]
 mod tests {
     use arch_program::{
-        account::AccountMeta, instruction::Instruction, pubkey::Pubkey, system_instruction,
-        utxo::UtxoMeta,
+        account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
     };
 
-    use arch_sdk::constants::*;
-    use arch_sdk::helper::*;
+    use arch_sdk::with_secret_key_file;
+    use arch_test_sdk::{
+        constants::PROGRAM_FILE_PATH,
+        helper::{deploy_program, read_account_info, send_utxo, sign_and_send_instruction},
+    };
     use borsh::{BorshDeserialize, BorshSerialize};
-
-    use std::fs;
 
     /// Represents the parameters for running the Hello World process
     #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
@@ -25,75 +25,15 @@ mod tests {
         println!("{:?}", 10044_u64.to_le_bytes());
         println!("{:?}", 10881_u64.to_le_bytes());
 
-        let (program_keypair, program_pubkey) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+        let program_pubkey = deploy_program(
+            "program/target/deploy/pda_program.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "PDA Program".to_string(),
+        );
 
         let (payer_account_keypair, payer_account_pubkey) =
             with_secret_key_file(".payer_account.json")
                 .expect("getting payer account info should not fail");
-
-        // let (vault_pda_account_keypair, vault_pda_account_pubkey) =
-        //     with_secret_key_file(".vault_pda_account.json")
-        //         .expect("getting vault pda account info should not fail");
-
-        let (txid, vout) = send_utxo(program_pubkey);
-        println!(
-            "{}:{} {:?}",
-            txid,
-            vout,
-            hex::encode(program_pubkey.serialize())
-        );
-
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::create_account(
-                hex::decode(txid).unwrap().try_into().unwrap(),
-                vout,
-                program_pubkey,
-            ),
-            vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-        println!("processed_tx {:?}", processed_tx);
-
-        deploy_program_txs(program_keypair, "program/target/deploy/pda_program.so").unwrap();
-
-        println!("{:?}", ());
-
-        let elf =
-            fs::read("program/target/deploy/pda_program.so").expect("elf path should be available");
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .data
-                == elf
-        );
-
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
-                program_id: Pubkey::system_program(),
-                accounts: vec![AccountMeta {
-                    pubkey: program_pubkey,
-                    is_signer: true,
-                    is_writable: true,
-                }],
-                data: vec![2],
-            },
-            vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-        println!("processed_tx {:?}", processed_tx);
-
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .is_executable
-        );
 
         // ####################################################################################################################
 
@@ -120,8 +60,8 @@ mod tests {
         //     &[vault_bump_seed]
         // ];
 
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
+        let processed_tx = sign_and_send_instruction(
+            vec![Instruction {
                 program_id: program_pubkey,
                 accounts: vec![
                     AccountMeta {
@@ -148,16 +88,13 @@ mod tests {
                     ),
                 })
                 .unwrap(),
-            },
+            }],
             vec![payer_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        let vault_pda_last_state = read_account_info(NODE1_ADDRESS, vault_pda_pubkey).unwrap();
+        let vault_pda_last_state = read_account_info(vault_pda_pubkey);
         println!("{:?}", vault_pda_last_state);
         // assert_eq!(
         //     vault_pda_last_state.utxo,

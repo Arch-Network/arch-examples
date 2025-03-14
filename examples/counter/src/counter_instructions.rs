@@ -1,13 +1,10 @@
 use arch_program::account::AccountMeta;
 use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
-use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
-use arch_sdk::constants::NODE1_ADDRESS;
-use arch_sdk::helper::{
-    assign_ownership_to_program, generate_new_keypair, get_processed_transaction,
-    read_account_info, send_utxo, sign_and_send_instruction,
+use arch_test_sdk::helper::{
+    assign_ownership_to_program, create_account, read_account_info, sign_and_send_instruction,
 };
 use bitcoin::key::Keypair;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -20,31 +17,14 @@ pub(crate) fn start_new_counter(
     step: u16,
     initial_value: u16,
 ) -> Result<(Pubkey, Keypair)> {
-    //print_title("COUNTER INITIALIZATION", 5);
-
-    let (account_key_pair, account_pubkey, address) = generate_new_keypair();
-
-    let (txid, vout) = send_utxo(account_pubkey);
+    let (account_key_pair, account_pubkey, address) = create_account();
 
     println!(
         "\x1b[32m Step 1/3 Successful :\x1b[0m Account created with address, {:?}",
         account_pubkey.0
     );
 
-    let (txid, _) = sign_and_send_instruction(
-        system_instruction::create_account(
-            hex::decode(txid).unwrap().try_into().unwrap(),
-            vout,
-            account_pubkey,
-        ),
-        vec![account_key_pair],
-    )
-    .expect("signing and sending a transaction should not fail");
-
-    let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-        .expect("get processed transaction should not fail");
-
-    assign_ownership_to_program(program_pubkey, account_pubkey, account_key_pair);
+    assign_ownership_to_program(*program_pubkey, account_pubkey, account_key_pair);
 
     println!("\x1b[32m Step 2/3 Successful :\x1b[0m Ownership Successfully assigned to program!");
 
@@ -57,8 +37,8 @@ pub(crate) fn start_new_counter(
     })
     .unwrap();
 
-    let (txid, _) = sign_and_send_instruction(
-        arch_program::instruction::Instruction {
+    let txid = sign_and_send_instruction(
+        vec![Instruction {
             program_id: *program_pubkey,
             accounts: vec![AccountMeta {
                 pubkey: account_pubkey,
@@ -66,15 +46,11 @@ pub(crate) fn start_new_counter(
                 is_writable: true,
             }],
             data: serialized_counter_input,
-        },
+        }],
         vec![account_key_pair],
-    )
-    .expect("signing and sending a transaction should not fail");
+    );
 
-    let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-        .expect("get processed transaction should not fail");
-
-    let account_info = read_account_info(NODE1_ADDRESS, account_pubkey).unwrap();
+    let account_info = read_account_info(account_pubkey);
 
     let mut account_info_data = account_info.data.as_slice();
 
@@ -152,6 +128,3 @@ pub(crate) fn get_counter_increase_instruction(
         data: serialized_counter_input,
     }
 }
-use arch_sdk::arch_program::message::Message;
-use arch_sdk::runtime_transaction::RuntimeTransaction;
-use arch_sdk::signature::Signature;

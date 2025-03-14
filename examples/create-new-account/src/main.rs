@@ -1,6 +1,6 @@
 use anyhow::Result;
 use arch_program::pubkey::Pubkey;
-use arch_sdk::helper::with_secret_key_file;
+use arch_sdk::with_secret_key_file;
 use create_new_account::create_new_account;
 
 fn main() -> Result<()> {

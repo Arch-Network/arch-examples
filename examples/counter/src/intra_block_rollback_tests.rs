@@ -1,10 +1,8 @@
-use arch_sdk::{
-    constants::{NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        build_and_send_block, build_transaction, get_processed_transaction, init_logging,
-        log_scenario_start, print_title, try_deploy_program,
-    },
-    processed_transaction::{RollbackStatus, Status},
+use arch_sdk::{build_transaction, RollbackStatus, Status};
+use arch_test_sdk::{
+    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+    helper::{deploy_program, send_transactions_and_wait},
+    logging::{init_logging, log_scenario_start, print_title},
 };
 use serial_test::serial;
 
@@ -26,7 +24,11 @@ fn test() {
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transaction should be rolled back"
     );
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -51,9 +53,13 @@ fn test() {
             Some(2500),
         );
 
-        let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+        let transaction = build_transaction(
+            vec![account_keypair],
+            vec![increase_istruction],
+            BITCOIN_NETWORK,
+        );
 
-        let _block_transactions = build_and_send_block(vec![transaction]);
+        let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
         let second_increase_istruction = get_counter_increase_instruction(
             &program_pubkey,
@@ -67,9 +73,10 @@ fn test() {
         let second_transaction = build_transaction(
             vec![second_account_keypair],
             vec![second_increase_istruction],
+            BITCOIN_NETWORK,
         );
 
-        let _second_block_transactions = build_and_send_block(vec![second_transaction]);
+        let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
         let _ = mine_block();
     }
@@ -81,7 +88,11 @@ fn test() {
 fn test_intra_block_tx_cache() {
     init_logging();
 
-    let program_pubkey = try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "E2E-Counter").unwrap();
+    let program_pubkey = deploy_program(
+        ELF_PATH.to_string(),
+        PROGRAM_FILE_PATH.to_string(),
+        "E2E-Counter".to_string(),
+    );
 
     print_title("First Counter Initialization and increase", 5);
 
@@ -112,15 +123,21 @@ fn test_intra_block_tx_cache() {
         None,
     );
 
-    let transaction = build_transaction(vec![account_keypair], vec![increase_istruction]);
+    let transaction = build_transaction(
+        vec![account_keypair],
+        vec![increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let second_transaction =
-        build_transaction(vec![account_keypair], vec![second_increase_istruction]);
+    let second_transaction = build_transaction(
+        vec![account_keypair],
+        vec![second_increase_istruction],
+        BITCOIN_NETWORK,
+    );
 
-    let block_transactions = build_and_send_block(vec![transaction, second_transaction]);
+    let block_transactions = send_transactions_and_wait(vec![transaction, second_transaction]);
 
-    for txid in block_transactions {
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid).unwrap();
+    for processed_tx in block_transactions {
         assert!(matches!(processed_tx.status, Status::Processed));
         assert!(matches!(
             processed_tx.rollback_status,

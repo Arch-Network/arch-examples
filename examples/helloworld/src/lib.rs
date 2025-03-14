@@ -3,9 +3,15 @@
 mod tests {
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
-    use arch_sdk::constants::*;
-    use arch_sdk::helper::*;
-    use arch_sdk::processed_transaction::Status;
+    use arch_sdk::{generate_new_keypair, with_secret_key_file, Status};
+    use arch_test_sdk::{
+        constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+        helper::{
+            assign_ownership_to_program, create_account, deploy_program, prepare_fees,
+            read_account_info, send_utxo, sign_and_send_instruction,
+        },
+        logging::print_title,
+    };
     use borsh::{BorshDeserialize, BorshSerialize};
     use serial_test::serial;
 
@@ -22,14 +28,13 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_hello_world() {
-        let program_pubkey = try_deploy_program(
-            "program/target/sbf-solana-solana/release/helloworldprogram.so",
-            PROGRAM_FILE_PATH,
-            "Hello World Program",
-        )
-        .unwrap();
+        let program_pubkey = deploy_program(
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Hello World Program".to_string(),
+        );
 
-        let program_account_info = read_account_info(NODE1_ADDRESS, program_pubkey).unwrap();
+        let program_account_info = read_account_info(program_pubkey);
 
         let elf = fs::read("program/target/sbf-solana-solana/release/helloworldprogram.so")
             .expect("elf path should be available");
@@ -43,65 +48,34 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_call() {
-        let program_pubkey = try_deploy_program(
-            "program/target/sbf-solana-solana/release/helloworldprogram.so",
-            PROGRAM_FILE_PATH,
-            "Hello World Program",
-        )
-        .unwrap();
+        let program_pubkey = deploy_program(
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Hello World Program".to_string(),
+        );
 
         print_title("ACCOUNT CREATION & PROGRAM CALL", 5);
 
-        let (first_account_keypair, first_account_pubkey, _) = generate_new_keypair();
+        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let (txid, vout) = send_utxo(first_account_pubkey);
+        let (first_account_keypair, first_account_pubkey, address) = create_account();
 
         println!(
-            "\x1b[32m Step 1/4 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : https://mempool.dev.aws.archnetwork.xyz/tx/{} -- vout : {}",
-            txid, vout
+            "\x1b[32m Step 1/4 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
+            arch_test_sdk::constants::get_explorer_address_url(BITCOIN_NETWORK, &address.to_string())
         );
-
-        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::create_account(
-                hex::decode(txid).unwrap().try_into().unwrap(),
-                vout,
-                first_account_pubkey,
-            ),
-            vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-
-        assert!(matches!(processed_tx.status, Status::Processed));
 
         println!("\x1b[32m Step 2/4 Successful :\x1b[0m Arch Account successfully created",);
 
         /* ------------------- ASSIGNING OWNERSHIP TO THE PROGRAM ------------------- */
-        let mut instruction_data = vec![3];
-
-        instruction_data.extend(program_pubkey.serialize());
-
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::assign(first_account_pubkey, program_pubkey),
-            vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let _processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-
-        let account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
-        assert_eq!(account_info.owner, program_pubkey);
+        assign_ownership_to_program(program_pubkey, first_account_pubkey, first_account_keypair);
 
         println!("\x1b[32m Step 3/4 Successful :\x1b[0m Account ownership successfully assigned to the program",);
 
         /* ---------- CALLING HELLO WORLD PROGRAM WITH THE CREATED ACCOUNT ---------- */
 
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
+        let processed_tx = sign_and_send_instruction(
+            vec![Instruction {
                 program_id: program_pubkey,
                 accounts: vec![AccountMeta {
                     pubkey: first_account_pubkey,
@@ -113,15 +87,11 @@ mod tests {
                     tx_hex: hex::decode(prepare_fees()).unwrap(),
                 })
                 .unwrap(),
-            },
+            }],
             vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
-
-        let account_info = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+        let account_info = read_account_info(first_account_pubkey);
 
         assert_eq!(
             String::from_utf8(account_info.data.clone()).unwrap(),
@@ -149,75 +119,64 @@ mod tests {
     #[ignore]
     #[test]
     fn test_redeploy_call() {
+        let program_pubkey = deploy_program(
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Hello World Program".to_string(),
+        );
+
         let (program_keypair, program_pubkey) =
             with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-        let (first_account_keypair, first_account_pubkey, _) = generate_new_keypair();
+        let (first_account_keypair, first_account_pubkey, _) =
+            generate_new_keypair(BITCOIN_NETWORK);
 
         let (txid, vout) = send_utxo(program_pubkey);
 
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::create_account(
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::create_account(
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
                 program_pubkey,
-            ),
+            )],
             vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
         assert!(processed_tx.status == Status::Processed);
 
-        deploy_program_txs(
-            program_keypair,
-            "program/target/sbf-solana-solana/release/helloworldprogram.so",
-        )
-        .expect("failed to deploy program");
+        deploy_program(
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Hello World Program".to_string(),
+        );
 
         println!("{:?}", ());
 
         let elf = fs::read("program/target/sbf-solana-solana/release/helloworldprogram.so")
             .expect("elf path should be available");
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .data
-                == elf
+        assert!(read_account_info(program_pubkey).data == elf);
+
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::deploy(program_pubkey)],
+            vec![program_keypair],
         );
 
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::deploy(program_pubkey),
-            vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
-
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
         assert!(processed_tx.status == Status::Processed);
 
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .is_executable
-        );
+        assert!(read_account_info(program_pubkey).is_executable);
 
         // ####################################################################################################################
 
         // retract the program from being executable
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::retract(program_pubkey),
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::retract(program_pubkey)],
             vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!(
             "retract the program from being executable {:?}",
             processed_tx
@@ -226,71 +185,50 @@ mod tests {
         assert!(processed_tx.status == Status::Processed);
 
         // write 10 bytes to the program
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::write_bytes(
-                read_account_info(NODE1_ADDRESS, program_pubkey)
-                    .unwrap()
-                    .data
-                    .len() as u32,
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::write_bytes(
+                read_account_info(program_pubkey).data.len() as u32,
                 10,
                 vec![5; 10],
                 program_pubkey,
-            ),
+            )],
             vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("write 10 bytes to the program {:?}", processed_tx);
 
         assert!(processed_tx.status == Status::Processed);
 
         // deploy the program
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::deploy(program_pubkey),
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::deploy(program_pubkey)],
             vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("deploy the program {:?}", processed_tx);
 
         assert!(processed_tx.status == Status::Processed);
 
-        deploy_program_txs(
-            program_keypair,
-            "program/target/sbf-solana-solana/release/helloworldprogram.so",
-        )
-        .expect("failed to deploy program");
+        deploy_program(
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Hello World Program".to_string(),
+        );
 
         // assert the program has the correct bytes
         let elf = fs::read("program/target/sbf-solana-solana/release/helloworldprogram.so")
             .expect("elf path should be available");
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .data
-                == elf
-        );
+        assert!(read_account_info(program_pubkey).data == elf);
 
         // deploy the program again
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::deploy(program_pubkey),
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::deploy(program_pubkey)],
             vec![program_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        assert!(
-            read_account_info(NODE1_ADDRESS, program_pubkey)
-                .unwrap()
-                .is_executable
-        );
+        assert!(read_account_info(program_pubkey).is_executable);
 
         // ####################################################################################################################
 
@@ -302,37 +240,32 @@ mod tests {
             hex::encode(first_account_pubkey.serialize())
         );
 
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::create_account(
-                hex::decode(txid).unwrap().try_into().unwrap(),
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::create_account(
+                hex::decode(txid.clone()).unwrap().try_into().unwrap(),
                 vout,
                 first_account_pubkey,
-            ),
+            )],
             vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
         let mut instruction_data = vec![3];
         instruction_data.extend(program_pubkey.serialize());
 
-        let (txid, _) = sign_and_send_instruction(
-            system_instruction::assign(first_account_pubkey, program_pubkey),
+        let processed_tx = sign_and_send_instruction(
+            vec![system_instruction::assign(
+                first_account_pubkey,
+                program_pubkey,
+            )],
             vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
         assert_eq!(
-            read_account_info(NODE1_ADDRESS, first_account_pubkey)
-                .unwrap()
-                .owner,
+            read_account_info(first_account_pubkey).owner,
             program_pubkey
         );
 
@@ -340,8 +273,8 @@ mod tests {
 
         println!("sending THE transaction");
 
-        let (txid, _) = sign_and_send_instruction(
-            Instruction {
+        let processed_tx = sign_and_send_instruction(
+            vec![Instruction {
                 program_id: program_pubkey,
                 accounts: vec![AccountMeta {
                     pubkey: first_account_pubkey,
@@ -353,16 +286,13 @@ mod tests {
                     tx_hex: hex::decode(prepare_fees()).unwrap(),
                 })
                 .unwrap(),
-            },
+            }],
             vec![first_account_keypair],
-        )
-        .expect("signing and sending a transaction should not fail");
+        );
 
-        let processed_tx = get_processed_transaction(NODE1_ADDRESS, txid.clone())
-            .expect("get processed transaction should not fail");
         println!("processed_tx {:?}", processed_tx);
 
-        let first_account_state = read_account_info(NODE1_ADDRESS, first_account_pubkey).unwrap();
+        let first_account_state = read_account_info(first_account_pubkey);
         println!("{:?}", first_account_state);
         assert_eq!(
             String::from_utf8(first_account_state.data.clone()).unwrap(),

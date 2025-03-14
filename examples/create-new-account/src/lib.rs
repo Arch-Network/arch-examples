@@ -2,7 +2,7 @@ use anyhow::Result;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
-use arch_sdk::helper::{prepare_fees, send_utxo, sign_and_send_instruction};
+use arch_test_sdk::helper::{prepare_fees, send_utxo, sign_and_send_instruction};
 use bitcoin::key::Keypair;
 use bitcoin::secp256k1::{Secp256k1, XOnlyPublicKey};
 use borsh::BorshSerialize;
@@ -64,9 +64,12 @@ pub fn create_new_account(program_id: Pubkey, account_pubkey: Pubkey, name: Stri
     let account_keypair = Keypair::from_secret_key(&secp, &secret_key);
     let _account_pubkey =
         Pubkey::from_slice(&XOnlyPublicKey::from_keypair(&account_keypair).0.serialize());
-    let (txid, _) = sign_and_send_instruction(instruction, vec![account_keypair])?;
+    let processed_tx = sign_and_send_instruction(vec![instruction], vec![account_keypair]);
 
     // Step 6: Confirm successful account creation
-    println!("Account created successfully with transaction: {}", txid);
+    println!(
+        "Account created successfully with transaction: {}",
+        processed_tx.txid()
+    );
     Ok(())
 }

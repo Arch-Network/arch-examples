@@ -3,13 +3,16 @@ pub mod secp256k1_signature_tests {
     pub const ELF_PATH: &str =
         "./program/target/sbf-solana-solana/release/secp256k1_signature_program.so";
     use arch_program::instruction::Instruction;
-    use arch_sdk::constants::*;
-    use arch_sdk::helper::{
-        build_and_send_block, build_transaction, fetch_processed_transactions,
-        generate_new_keypair, init_logging, log_scenario_end, log_scenario_start,
-        try_deploy_program,
-    };
-    use arch_sdk::processed_transaction::Status;
+    use arch_sdk::build_transaction;
+    use arch_sdk::generate_new_keypair;
+    use arch_sdk::Status;
+    use arch_test_sdk::constants::BITCOIN_NETWORK;
+    use arch_test_sdk::constants::PROGRAM_FILE_PATH;
+    use arch_test_sdk::helper::deploy_program;
+    use arch_test_sdk::helper::send_transactions_and_wait;
+    use arch_test_sdk::logging::init_logging;
+    use arch_test_sdk::logging::log_scenario_end;
+    use arch_test_sdk::logging::log_scenario_start;
     use borsh::{BorshDeserialize, BorshSerialize};
 
     use libsecp256k1::sign;
@@ -33,9 +36,13 @@ pub mod secp256k1_signature_tests {
             "Signing a message and verifying the signature within the program",
             "Successful verification of a Secp256k1 signature, provided the message hash, the signature, and the 64-bytes compressed pubkey",
         );
-        let program_pubkey =
-            try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "Secp256k1-signature").unwrap();
-        let (signing_keypair, _, _) = generate_new_keypair();
+        let program_pubkey = deploy_program(
+            ELF_PATH.to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Secp256k1-signature".to_string(),
+        );
+
+        let (signing_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
         let message_slice = "Message".as_bytes();
         let message_digest = sha256::digest(message_slice);
         let message_hash = hex::decode(message_digest.clone()).unwrap();
@@ -63,13 +70,10 @@ pub mod secp256k1_signature_tests {
             accounts: vec![],
             data: serialized_instruction_data,
         };
-        let transaction = build_transaction(vec![signing_keypair], vec![instruction]);
-        let block_transactions = build_and_send_block(vec![transaction]);
-        let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
-        assert!(matches!(
-            processed_transactions[0].status,
-            Status::Processed
-        ));
+        let transaction =
+            build_transaction(vec![signing_keypair], vec![instruction], BITCOIN_NETWORK);
+        let block_transactions = send_transactions_and_wait(vec![transaction]);
+        assert!(matches!(block_transactions[0].status, Status::Processed));
         log_scenario_end(1, "Verified the signature successfully !");
     }
 
@@ -83,9 +87,12 @@ pub mod secp256k1_signature_tests {
             "Verifying an erroneous signature",
             "Failing verification of a Secp256k1 signature, provided the message hash, an erroneous signature, and the 64-bytes compressed pubkey",
         );
-        let program_pubkey =
-            try_deploy_program(ELF_PATH, PROGRAM_FILE_PATH, "Secp256k1-signature").unwrap();
-        let (signing_keypair, _, _) = generate_new_keypair();
+        let program_pubkey = deploy_program(
+            ELF_PATH.to_string(),
+            PROGRAM_FILE_PATH.to_string(),
+            "Secp256k1-signature".to_string(),
+        );
+        let (signing_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
         let message_slice = "Message".as_bytes();
         let message_digest = sha256::digest(message_slice);
         let message_hash = hex::decode(message_digest.clone()).unwrap();
@@ -115,11 +122,12 @@ pub mod secp256k1_signature_tests {
             accounts: vec![],
             data: serialized_instruction_data,
         };
-        let transaction = build_transaction(vec![signing_keypair], vec![instruction]);
-        let block_transactions = build_and_send_block(vec![transaction]);
-        let processed_transactions = fetch_processed_transactions(block_transactions).unwrap();
+        let transaction =
+            build_transaction(vec![signing_keypair], vec![instruction], BITCOIN_NETWORK);
+
+        let block_transactions = send_transactions_and_wait(vec![transaction]);
         assert!(matches!(
-            &processed_transactions[0].status,
+            &block_transactions[0].status,
             Status::Failed {0: reason }
             if reason.contains("Custom program error:")
         ));
