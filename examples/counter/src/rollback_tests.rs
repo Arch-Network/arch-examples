@@ -16,7 +16,6 @@ use arch_test_sdk::{
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
 use bitcoincore_rpc::{Auth, Client, RpcApi};
-use electrs_client::ElectrsClient;
 use serial_test::serial;
 
 use crate::{
@@ -638,31 +637,6 @@ fn rbf_orphan_arch_txs() {
             first_account_data, second_account_data
         ),
     );
-}
-
-#[ignore]
-#[serial]
-#[test]
-fn test_read_account_info() {
-    // First account : AccountInfoResult { owner: Pubkey([151, 101, 133, 101, 113, 47, 35, 250, 185, 174, 107, 254, 141, 172, 6, 125, 5, 178, 115, 102, 66, 8, 207, 195, 253, 235, 90, 16, 21, 124, 164, 102]), data: [2, 0, 1, 0], utxo: "be1663818e61dd78150973981820ee7cd315f3a09fef5ab35c153583c518c85d:1", is_executable: false, tag: "c4d2b3fd5cfca2f9213e0929624e792880cb02233d4ec0f02055f2d2cf90b834" }
-    // Second account : AccountInfoResult { owner: Pubkey([151, 101, 133, 101, 113, 47, 35, 250, 185, 174, 107, 254, 141, 172, 6, 125, 5, 178, 115, 102, 66, 8, 207, 195, 253, 235, 90, 16, 21, 124, 164, 102]), data: [1, 0, 1, 0], utxo: "f42320baa993433c7ab81f089df0a7644f104042614b4fe5222453d0b87609b4:0", is_executable: false, tag: "3744a83e37d34b165da85b64711450c19ea192eadfc647714ce2e228b2b7ccb2" }
-
-    let electrs_client = ElectrsClient::new("http://127.0.0.1:3002".to_string());
-    let outspend = electrs_client
-        .get_tx_outspend(
-            "a539fd23f67ad017009c58c25a0c2d15fb2a67eb9892d05f222fcb30a5dc90eb".to_string(),
-            0,
-        )
-        .unwrap();
-    println!("Outspend : {:?}", outspend);
-
-    let outspend = electrs_client
-        .get_tx_outspend(
-            "cc7840642e90a54b35ede597b696c7eb3739c731e7168e8a59db28c315a60585".to_string(),
-            0,
-        )
-        .unwrap();
-    println!("Outspend : {:?}", outspend);
 }
 
 #[ignore]
