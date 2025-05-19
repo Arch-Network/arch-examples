@@ -65,7 +65,7 @@ mod tests {
         assert!(
             read_account_info(NODE1_ADDRESS, program_pubkey.clone())
                 .unwrap()
-                .data
+                .data[LoaderState::program_data_offset()..]
                 == elf
         );
 

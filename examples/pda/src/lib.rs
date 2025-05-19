@@ -1,15 +1,18 @@
 /// Running Tests
 #[cfg(test)]
 mod tests {
+    use arch_program::bpf_loader::LoaderState;
+    use arch_program::sanitized::ArchMessage;
     use arch_program::{
         account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
     };
 
-    use arch_sdk::with_secret_key_file;
-    use arch_test_sdk::{
-        constants::PROGRAM_FILE_PATH,
-        helper::{deploy_program, read_account_info, send_utxo, sign_and_send_instruction},
+    use arch_sdk::{
+        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
     };
+    use arch_test_sdk::constants::{BITCOIN_NETWORK, NODE1_ADDRESS};
+    use arch_test_sdk::helper::{create_and_fund_account_with_faucet, send_transactions_and_wait};
+    use arch_test_sdk::helper::{deploy_program, read_account_info, send_utxo};
     use borsh::{BorshDeserialize, BorshSerialize};
 
     /// Represents the parameters for running the Hello World process
@@ -22,18 +25,31 @@ mod tests {
     #[ignore]
     #[test]
     fn test_deploy_call() {
-        println!("{:?}", 10044_u64.to_le_bytes());
-        println!("{:?}", 10881_u64.to_le_bytes());
+        let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+        let (program_keypair, _) = with_secret_key_file("pda_program.key").unwrap();
+
+        let (authority_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
+        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
         let program_pubkey = deploy_program(
-            "program/target/deploy/pda_program.so".to_string(),
-            PROGRAM_FILE_PATH.to_string(),
             "PDA Program".to_string(),
+            "program/target/deploy/pda_program.so".to_string(),
+            program_keypair,
+            authority_keypair,
         );
 
-        let (payer_account_keypair, payer_account_pubkey) =
-            with_secret_key_file(".payer_account.json")
-                .expect("getting payer account info should not fail");
+        let (payer_account_keypair, payer_account_pubkey, _) =
+            generate_new_keypair(BITCOIN_NETWORK);
+        create_and_fund_account_with_faucet(&payer_account_keypair, BITCOIN_NETWORK);
+
+        let elf = std::fs::read("program/target/deploy/pda_program.so")
+            .expect("elf path should be available");
+        assert!(
+            read_account_info(program_pubkey).data[LoaderState::program_data_offset()..] == elf
+        );
+
+        assert!(read_account_info(program_pubkey).is_executable);
 
         // ####################################################################################################################
 
@@ -54,43 +70,45 @@ mod tests {
             hex::encode(vault_pda_pubkey.serialize())
         );
 
-        // let vault_seeds = &[
-        //     b"vault",
-        //     payer_account_pubkey.as_ref(),
-        //     &[vault_bump_seed]
-        // ];
-
-        let processed_tx = sign_and_send_instruction(
-            vec![Instruction {
-                program_id: program_pubkey,
-                accounts: vec![
-                    AccountMeta {
-                        pubkey: payer_account_pubkey,
-                        is_signer: true,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: vault_pda_pubkey,
-                        is_signer: false,
-                        is_writable: true,
-                    },
-                    AccountMeta {
-                        pubkey: Pubkey::system_program(),
-                        is_signer: false,
-                        is_writable: false,
-                    },
-                ],
-                data: borsh::to_vec(&HelloWorldParams {
-                    vault_bump_seed,
-                    utxo: UtxoMeta::from(
-                        hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
-                        utxo_vout,
-                    ),
-                })
-                .unwrap(),
-            }],
+        let transaction = build_and_sign_transaction(
+            ArchMessage::new(
+                &[Instruction {
+                    program_id: program_pubkey,
+                    accounts: vec![
+                        AccountMeta {
+                            pubkey: payer_account_pubkey,
+                            is_signer: true,
+                            is_writable: true,
+                        },
+                        AccountMeta {
+                            pubkey: vault_pda_pubkey,
+                            is_signer: false,
+                            is_writable: true,
+                        },
+                        AccountMeta {
+                            pubkey: Pubkey::system_program(),
+                            is_signer: false,
+                            is_writable: false,
+                        },
+                    ],
+                    data: borsh::to_vec(&HelloWorldParams {
+                        vault_bump_seed,
+                        utxo: UtxoMeta::from(
+                            hex::decode(utxo_txid.clone()).unwrap().try_into().unwrap(),
+                            utxo_vout,
+                        ),
+                    })
+                    .unwrap(),
+                }],
+                Some(payer_account_pubkey),
+                client.get_best_block_hash().unwrap(),
+            ),
             vec![payer_account_keypair],
+            BITCOIN_NETWORK,
         );
+
+        let block_transactions = send_transactions_and_wait(vec![transaction]);
+        let processed_tx = block_transactions[0].clone();
 
         println!("processed_tx {:?}", processed_tx);
 

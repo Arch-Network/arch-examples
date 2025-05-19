@@ -16,7 +16,7 @@ use arch_program::{
     program_error::ProgramError,
     pubkey::Pubkey,
     sol_secp256k1_recover::secp256k1_recover,
-    system_instruction::SystemInstruction,
+    system_instruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };

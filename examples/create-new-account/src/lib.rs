@@ -1,12 +1,14 @@
 use anyhow::Result;
+use arch_program::sanitized::ArchMessage;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
-use arch_test_sdk::helper::{prepare_fees, send_utxo, sign_and_send_instruction};
-use bitcoin::key::Keypair;
-use bitcoin::secp256k1::{Secp256k1, XOnlyPublicKey};
+use arch_sdk::{build_and_sign_transaction, with_secret_key_file, ArchRpcClient};
+use arch_test_sdk::constants::{BITCOIN_NETWORK, NODE1_ADDRESS};
+use arch_test_sdk::helper::{
+    create_and_fund_account_with_faucet, prepare_fees, send_transactions_and_wait, send_utxo,
+};
 use borsh::BorshSerialize;
-use rand::rngs::OsRng;
 
 #[derive(BorshSerialize)]
 pub struct CreateAccountParams {
@@ -23,7 +25,13 @@ pub struct CreateAccountParams {
 ///
 /// # Returns
 /// * `Result<()>` - Success or error status of the account creation
-pub fn create_new_account(program_id: Pubkey, account_pubkey: Pubkey, name: String) -> Result<()> {
+pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (account_keypair, account_pubkey) = with_secret_key_file(".test_account.json")?;
+    let (payer_keypair, payer_pubkey) = with_secret_key_file(".test_account.json")?;
+    create_and_fund_account_with_faucet(&payer_keypair, BITCOIN_NETWORK);
+
     // Step 1: Create and send a UTXO (Unspent Transaction Output) to the new account
     // This UTXO will be used to fund the account creation
     let (txid, vout) = send_utxo(account_pubkey);
@@ -49,27 +57,35 @@ pub fn create_new_account(program_id: Pubkey, account_pubkey: Pubkey, name: Stri
     // This instruction contains all the necessary information for account creation
     let instruction = Instruction {
         program_id, // The program that will process this instruction
-        accounts: vec![AccountMeta {
-            pubkey: account_pubkey, // The account being created
-            is_signer: true,        // This account must sign the transaction
-            is_writable: true,      // The account's data will be modified
-        }],
+        accounts: vec![
+            AccountMeta {
+                pubkey: account_pubkey, // The account being created
+                is_signer: true,        // This account must sign the transaction
+                is_writable: true,      // The account's data will be modified
+            },
+            AccountMeta::new(payer_pubkey, true),
+        ],
         data: borsh::to_vec(&params)?, // Serialize the parameters into bytes
     };
 
     // Step 5: Sign and send the instruction to the network
     // The account_pubkey is included in the signers list as it needs to authorize this action
-    let secp = Secp256k1::new();
-    let (secret_key, _) = secp.generate_keypair(&mut OsRng);
-    let account_keypair = Keypair::from_secret_key(&secp, &secret_key);
-    let _account_pubkey =
-        Pubkey::from_slice(&XOnlyPublicKey::from_keypair(&account_keypair).0.serialize());
-    let processed_tx = sign_and_send_instruction(vec![instruction], vec![account_keypair]);
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[instruction],
+            Some(payer_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, payer_keypair],
+        BITCOIN_NETWORK,
+    );
+
+    let block_transactions = send_transactions_and_wait(vec![transaction]);
 
     // Step 6: Confirm successful account creation
     println!(
-        "Account created successfully with transaction: {}",
-        processed_tx.txid()
+        "Account created successfully with transaction: {:?}",
+        block_transactions[0]
     );
     Ok(())
 }

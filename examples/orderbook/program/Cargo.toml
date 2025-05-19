@@ -1,0 +1,16 @@
+[package]
+name = "orderbook_program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+arch_program = { path = "../../../program" }
+borsh = { version = "1.5.1", features = ["derive"] }
+apl-token = { path = "../../../token", features = ["no-entrypoint"] }
+apl-associated-token-account = { path = "../../../associated-token-account", features = ["no-entrypoint"] }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []

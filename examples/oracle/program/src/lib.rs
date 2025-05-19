@@ -26,7 +26,6 @@ pub fn update_data(
     let oracle_account = next_account_info(account_iter)?;
 
     assert!(oracle_account.is_signer);
-    //assert!(oracle_account.key.clone() == Pubkey::from_slice(&[0; 32]));
     assert_eq!(instruction_data.len(), 8);
 
     let data_len = oracle_account.data.try_borrow().unwrap().len();
