@@ -1,5 +1,5 @@
 use arch_program::{
-    account::{AccountInfo, MIN_ACCOUNT_LAMPORTS},
+    account::AccountInfo,
     bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
     entrypoint,
     helper::add_state_transition,
@@ -11,7 +11,6 @@ use arch_program::{
     system_instruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
-    system_program::SYSTEM_PROGRAM_ID,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -44,8 +43,6 @@ pub fn process_instruction(
     let factory_state_account = next_account_info(account_iter)?;
     let new_account = next_account_info(account_iter)?;
 
-    let payer = next_account_info(account_iter)?;
-
     // Step 2: Deserialize the instruction parameters
     let params: CreateAccountParams = borsh::from_slice(instruction_data).map_err(map_io_error)?;
     let fees_tx: Transaction = bitcoin::consensus::deserialize(&params.tx_hex).unwrap();
@@ -53,16 +50,12 @@ pub fn process_instruction(
     // Step 3: Create the new account using Cross-Program Invocation (CPI)
     // This calls the system program to actually create the account
     invoke(
-        &system_instruction::create_account_with_anchor(
-            &payer.key,
-            &new_account.key,
-            MIN_ACCOUNT_LAMPORTS,
-            0,
-            &SYSTEM_PROGRAM_ID,
+        &system_instruction::create_account(
             params.utxo.txid().try_into().unwrap(),
             params.utxo.vout(),
+            *new_account.key,
         ),
-        &[payer.clone(), new_account.clone()],
+        &[new_account.clone()],
     )?;
 
     // Step 4: Update or initialize the factory state

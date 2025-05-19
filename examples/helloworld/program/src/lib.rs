@@ -30,6 +30,11 @@ pub fn process_instruction(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
+    // We expect exactly one account for this program
+    if accounts.len() != 1 {
+        return Err(ProgramError::Custom(501));
+    }
+
     // Get the current Bitcoin block height for reference
     let bitcoin_block_height = get_bitcoin_block_height();
     msg!("bitcoin_block_height {:?}", bitcoin_block_height);

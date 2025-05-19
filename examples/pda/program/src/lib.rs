@@ -1,5 +1,5 @@
 use arch_program::{
-    account::{AccountInfo, AccountMeta, MIN_ACCOUNT_LAMPORTS},
+    account::{AccountInfo, AccountMeta},
     bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
     entrypoint,
     helper::add_state_transition,
@@ -12,7 +12,7 @@ use arch_program::{
     },
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::create_account_with_anchor,
+    system_instruction,
     transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };
@@ -44,37 +44,33 @@ fn process_instruction(
     msg!("starting cpi call to create account");
 
     invoke_signed(
-        &create_account_with_anchor(
-            payer.key,
-            vault_pda.key,
-            MIN_ACCOUNT_LAMPORTS,
-            0,
-            program_id,
+        &system_instruction::create_account(
             params.utxo.txid().try_into().unwrap(),
             params.utxo.vout(),
+            vault_pda.key.clone(),
         ),
-        &[vault_pda.clone(), payer.clone(), system_program.clone()],
+        &[vault_pda.clone()],
         &[&[b"vault", payer.key.as_ref(), &[vault_bump_seed]]],
     )?;
 
-    msg!("writing program id to vault pda");
+    msg!("starting cpi call to write bytes");
 
-    vault_pda.realloc(32, true)?;
-    vault_pda.data.borrow_mut().copy_from_slice(&program_id.serialize());
+    let mut data = vec![3];
+    data.extend(program_id.serialize());
 
-    // invoke_signed(
-    //     &Instruction {
-    //         program_id: Pubkey::system_program(),
-    //         accounts: vec![AccountMeta {
-    //             pubkey: vault_pda.key.clone(),
-    //             is_signer: true,
-    //             is_writable: true,
-    //         }],
-    //         data,
-    //     },
-    //     &[vault_pda.clone()],
-    //     &[&[b"vault", payer.key.as_ref(), &[vault_bump_seed]]],
-    // )?;
+    invoke_signed(
+        &Instruction {
+            program_id: Pubkey::system_program(),
+            accounts: vec![AccountMeta {
+                pubkey: vault_pda.key.clone(),
+                is_signer: true,
+                is_writable: true,
+            }],
+            data,
+        },
+        &[vault_pda.clone()],
+        &[&[b"vault", payer.key.as_ref(), &[vault_bump_seed]]],
+    )?;
 
     msg!("done");
 

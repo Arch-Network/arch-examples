@@ -1,15 +1,18 @@
 use arch_program::{
-    account::AccountInfo,
+    account::{AccountInfo, AccountMeta},
     bitcoin::{
-        self, absolute::LockTime, transaction::Version, Address, Amount, Transaction,
+        self, absolute::LockTime, transaction::Version, Address, Amount, ScriptBuf, Transaction,
         TxOut,
     },
     entrypoint,
     helper::add_state_transition,
     input_to_sign::InputToSign,
+    instruction::Instruction,
     msg,
-    program::{next_account_info, set_transaction_to_sign},
-    log::sol_log_compute_units,
+    program::{
+        get_account_script_pubkey, get_bitcoin_block_height, invoke, next_account_info,
+        set_transaction_to_sign,
+    },
     program_error::ProgramError,
     pubkey::Pubkey,
     transaction_to_sign::TransactionToSign,
@@ -33,14 +36,20 @@ pub fn process_instruction(
         .map_err(|_e| ProgramError::AccountBorrowFailed)?
         .len();
 
-    msg!("data_len: {}", data_len);
+    msg!(
+        "account data : {:?}",
+        account
+            .data
+            .try_borrow()
+            .map_err(|_e| ProgramError::Custom(501))?
+    );
 
     let counter_input: CounterInput =
         borsh::from_slice(instruction_data).map_err(|_e| ProgramError::InvalidArgument)?;
 
-    let instruction = counter_input.instruction.clone();
+    msg!("counter input : {:?}", counter_input);
 
-    sol_log_compute_units();
+    let instruction = counter_input.instruction.clone();
 
     match instruction {
         CounterInstruction::InitializeCounter(initial_value, step) => {
@@ -49,6 +58,8 @@ pub fn process_instruction(
             }
 
             let new_counter_data = CounterData::new(initial_value, step);
+
+            msg!(&format!("INITIALIZING COUNTER ! {:?}", new_counter_data));
 
             let serialized_counter_data = borsh::to_vec(&new_counter_data)
                 .map_err(|e| ProgramError::BorshIoError(e.to_string()))?;
@@ -62,6 +73,11 @@ pub fn process_instruction(
                 .try_borrow_mut()
                 .map_err(|_e| ProgramError::AccountBorrowFailed)?
                 .copy_from_slice(&serialized_counter_data);
+
+            msg!(&format!(
+                "Mutating memory ! {:?}",
+                serialized_counter_data.len()
+            ));
         }
         CounterInstruction::IncreaseCounter => {
             if data_len == 0 {
@@ -84,9 +100,16 @@ pub fn process_instruction(
             let new_data =
                 borsh::to_vec(&new_counter_data).map_err(|_e| ProgramError::Custom(502))?;
 
+            msg!(&format!(
+                "Increasing counter ! {:?} new data {:?}",
+                counter_data, new_data
+            ));
+
             if new_data.len() > data_len {
                 account.realloc(new_data.len(), true)?;
             }
+
+            msg!(&format!("Reallocated memory ! {:?}", new_data.len()));
 
             drop(serialized_current_counter_data);
             account
@@ -94,6 +117,8 @@ pub fn process_instruction(
                 .try_borrow_mut()
                 .map_err(|_e| ProgramError::Custom(503))?
                 .copy_from_slice(&new_data);
+
+            msg!("Successfully increased counter !");
         }
     }
 
@@ -111,6 +136,8 @@ pub fn process_instruction(
         };
 
         add_state_transition(&mut tx, account);
+
+        msg!(&format!("The transaction with state transition : {:?}", tx));
 
         let index = 0;
 
@@ -139,7 +166,7 @@ pub fn process_instruction(
             }],
         };
 
-        sol_log_compute_units();
+        msg!("Transaction to sign {:?}", tx);
         set_transaction_to_sign(accounts, tx_to_sign)?
     }
 
