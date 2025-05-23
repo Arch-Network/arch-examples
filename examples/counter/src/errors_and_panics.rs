@@ -3,11 +3,17 @@ use crate::{
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     ELF_PATH,
 };
-
-use arch_sdk::{build_transaction, RollbackStatus, Status};
+use arch_program::sanitized::ArchMessage;
+use arch_sdk::{
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
+    RollbackStatus, Status,
+};
 use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
-    helper::{deploy_program, read_account_info, send_transactions_and_wait},
+    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
+    helper::{
+        create_and_fund_account_with_faucet, deploy_program, read_account_info,
+        send_transactions_and_wait,
+    },
     logging::{init_logging, log_scenario_end, log_scenario_start},
 };
 use serial_test::serial;
@@ -23,20 +29,41 @@ fn counter_inc_single_instruction_fail() {
         "Initializing the counter to (1,1), then increasing it in a single instruction, the state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
+    let increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        true,
+        false,
+        None,
+        None,
+    );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -65,20 +92,41 @@ fn counter_inc_single_instruction_panic() {
         "Initializing the counter to (1,1), then increasing it in a single instruction, the state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
+    let increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        false,
+        true,
+        None,
+        None,
+    );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -107,38 +155,60 @@ fn counter_inc_two_instructions_1st_fail() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction failing. The state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        true,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let block_transactions = send_transactions_and_wait(vec![increase_transaction]);
+    let processed_transactions = send_transactions_and_wait(vec![increase_transaction]);
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
     assert!(matches!(
-        block_transactions[0].status,
+        processed_transactions[0].status,
         Status::Failed { .. }
     ));
 
@@ -158,29 +228,51 @@ fn counter_inc_two_instructions_2nd_fail() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction failing. The state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        true,
+        false,
+        None,
+        None,
+    );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -209,29 +301,51 @@ fn counter_inc_two_instructions_1st_panic() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction panicking. The state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        false,
+        true,
+        None,
+        None,
+    );
 
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -260,29 +374,51 @@ fn counter_inc_two_instructions_2nd_panic() {
         "Initializing the counter to (1,1), then increasing it twice within the same transaction, with the first instruction panicking. The state shouldn't be updated"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        false,
+        true,
+        None,
+        None,
+    );
 
-    let increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -311,35 +447,61 @@ fn counter_inc_two_transactions_1st_fail() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction failing. The state should be updated by 2nd transaction"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        true,
+        false,
+        None,
+        None,
+    );
 
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let first_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction],
+    let first_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![second_increase_instruction],
+    let second_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -376,35 +538,61 @@ fn counter_inc_two_transactions_2nd_fail() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the second transaction failing. The state should be updated by 1st transaction"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, true, false, None, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        true,
+        false,
+        None,
+        None,
+    );
 
-    let first_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction],
+    let first_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![second_increase_instruction],
+    let second_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -441,35 +629,61 @@ fn counter_inc_two_transactions_1st_panic() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction panicking. The state should be updated by 2nd transaction"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let first_increase_istruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
+    let first_increase_istruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        false,
+        true,
+        None,
+        None,
+    );
 
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let first_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction],
+    let first_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![second_increase_instruction],
+    let second_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -506,35 +720,61 @@ fn counter_inc_two_transactions_2nd_panic() {
         "Initializing the counter to (1,1), then increasing it twice in two separate transactions, with the first transaction panicking. The state should be updated by 1st transaction"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let second_increase_instruction =
-        get_counter_increase_instruction(&program_pubkey, &account_pubkey, false, true, None, None);
+    let second_increase_instruction = get_counter_increase_instruction(
+        &program_pubkey,
+        &account_pubkey,
+        &authority_pubkey,
+        false,
+        true,
+        None,
+        None,
+    );
 
-    let first_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction],
+    let first_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_increase_transaction = build_transaction(
-        vec![account_keypair],
-        vec![second_increase_instruction],
+    let second_increase_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -571,28 +811,43 @@ fn counter_init_and_inc_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -632,19 +887,30 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, the second instruction should be rolled back, and the state shouldn't change"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
@@ -654,15 +920,20 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -702,21 +973,32 @@ fn counter_init_and_two_inc_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a failing Bitcoin Transaction Anchoring, and a succeeding state only instruction, the entire Runtime transaction and the state shouldn't change"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
-    let anchoring_2 = generate_anchoring(&account_pubkey);
+    let _anchoring_2 = generate_anchoring(&account_pubkey);
 
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
@@ -726,15 +1008,20 @@ fn counter_init_and_two_inc_anchored_fail() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -774,13 +1061,23 @@ fn counter_init_and_two_inc_second_anchored_fail() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a succeeding state only instruction, and a failing anchored instruction, the entire Runtime transaction and the state shouldn't change"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let account_info = read_account_info(account_pubkey);
 
@@ -791,6 +1088,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
@@ -800,15 +1098,20 @@ fn counter_init_and_two_inc_second_anchored_fail() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, true)),
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![first_increase_istruction, second_increase_instruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction, second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -854,17 +1157,26 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change. The second transaction will try to change another state with an anchoring it should succeed"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     let (first_account_pubkey, first_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_account_info = read_account_info(first_account_pubkey);
 
@@ -881,6 +1193,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &first_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
@@ -890,21 +1203,30 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((second_anchoring.0, second_anchoring.1, false)),
         None,
     );
 
-    let first_transaction = build_transaction(
-        vec![first_account_keypair],
-        vec![first_increase_istruction],
+    let first_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![first_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_instruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -982,17 +1304,26 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring, the BTC anchoring should fail, and the state shouldn't change. The second transaction will try to change another state without an anchoring it should succeed"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     let (first_account_pubkey, first_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let first_account_info = read_account_info(first_account_pubkey);
 
@@ -1007,6 +1338,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &first_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
@@ -1016,21 +1348,30 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let first_transaction = build_transaction(
-        vec![first_account_keypair],
-        vec![first_increase_istruction],
+    let first_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[first_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![first_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_instruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_instruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 

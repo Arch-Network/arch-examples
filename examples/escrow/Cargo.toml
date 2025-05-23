@@ -1,0 +1,27 @@
+[package]
+name = "escrow"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+arch_sdk = { path = "../../sdk" }
+arch_program = { path = "../../program" }
+arch_test_sdk = { path = "../../test_sdk" }
+apl-token = { path = "../../token", features = ["no-entrypoint"] }
+apl-associated-token-account = { path = "../../associated-token-account", features = [
+    "no-entrypoint",
+] }
+
+
+bitcoincore-rpc = "0.18.0"
+hex = "0.4.3"
+borsh = { version = "1.4.0", features = ["derive"] }
+bitcoin = { version = "0.32.3", features = ["serde", "rand"] }
+log = "0.4"
+env_logger = "0.10"
+
+[dev-dependencies]
+serial_test = "3.1.1"
+
+[lib]
+path = "src/lib.rs"

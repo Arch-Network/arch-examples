@@ -1,17 +1,22 @@
-/* -------------------------------------------------------------------------- */
-/*                ROLLBACK TESTS IN CASE OF RBF (REGTEST ONLY)                */
-/* -------------------------------------------------------------------------- */
-
+// /* -------------------------------------------------------------------------- */
+// /*                ROLLBACK TESTS IN CASE OF RBF (REGTEST ONLY)                */
+// /* -------------------------------------------------------------------------- */
 use std::{str::FromStr, thread, time::Duration};
 
-use arch_sdk::{build_transaction, Status};
+use arch_program::sanitized::ArchMessage;
+use arch_sdk::{
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
+};
 use arch_test_sdk::{
     constants::{
         BITCOIN_NETWORK, BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, MINING_ADDRESS,
-        PROGRAM_FILE_PATH,
+        NODE1_ADDRESS, PROGRAM_FILE_PATH,
     },
-    helper::{deploy_program, read_account_info, send_transactions_and_wait},
+    helper::{
+        create_and_fund_account_with_faucet, deploy_program, read_account_info,
+        send_transactions_and_wait,
+    },
     logging::{init_logging, log_scenario_end, log_scenario_start, print_title},
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
@@ -134,25 +139,35 @@ fn isolate_nodes() {
 fn single_utxo_rbf_two_accounts() {
     init_logging();
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
     log_scenario_start(23,
         "2 Counters, same utxo replaced by a greater fee",
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transaction should be rolled back"
     );
 
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
@@ -173,15 +188,20 @@ fn single_utxo_rbf_two_accounts() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
         Some(2500),
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -220,15 +240,20 @@ fn single_utxo_rbf_two_accounts() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
         None,
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_istruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -280,25 +305,35 @@ fn single_utxo_rbf_three_accounts() {
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transactions should be rolled back"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     print_title("Third Counter Initialization and increase", 5);
 
     let (third_account_pubkey, third_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
@@ -319,15 +354,20 @@ fn single_utxo_rbf_three_accounts() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
         Some(5000),
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -365,15 +405,20 @@ fn single_utxo_rbf_three_accounts() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
         Some(2500),
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_istruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -394,15 +439,20 @@ fn single_utxo_rbf_three_accounts() {
     let third_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &third_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
         None,
     );
 
-    let third_transaction = build_transaction(
-        vec![third_account_keypair],
-        vec![third_increase_istruction],
+    let third_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[third_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![third_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -466,20 +516,30 @@ fn rbf_orphan_arch_txs() {
         "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Sane utxo is then used to update another account in RBF"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
@@ -500,15 +560,20 @@ fn rbf_orphan_arch_txs() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
         Some(2500),
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -543,15 +608,20 @@ fn rbf_orphan_arch_txs() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -581,15 +651,20 @@ fn rbf_orphan_arch_txs() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
         None,
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_istruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -650,22 +725,32 @@ fn rbf_reorg() {
         "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Same utxo is then used to update another account in RBF"
     );
 
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
     connect_nodes();
 
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
     let program_pubkey = deploy_program(
-        ELF_PATH.to_string(),
-        PROGRAM_FILE_PATH.to_string(),
         "E2E-Counter".to_string(),
+        ELF_PATH.to_string(),
+        program_keypair,
+        authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) = start_new_counter(&program_pubkey, 1, 1).unwrap();
+    let (account_pubkey, account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
@@ -686,15 +771,20 @@ fn rbf_reorg() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
         Some(2500),
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -755,15 +845,20 @@ fn rbf_reorg() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
+        &authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
         None,
     );
 
-    let second_transaction = build_transaction(
-        vec![second_account_keypair],
-        vec![second_increase_istruction],
+    let second_transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[second_increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -828,15 +923,20 @@ fn rbf_reorg() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
+        &authority_pubkey,
         false,
         false,
         None,
         None,
     );
 
-    let transaction = build_transaction(
-        vec![account_keypair],
-        vec![increase_istruction],
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[increase_istruction],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
     );
 
