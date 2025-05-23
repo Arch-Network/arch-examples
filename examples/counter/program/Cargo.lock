@@ -45,7 +45,6 @@ dependencies = [
  "num-traits",
  "rand",
  "rustversion",
- "sanitize",
  "serde",
  "serde_bytes",
  "serde_derive",
@@ -621,10 +620,6 @@ name = "rustversion"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eded382c5f5f786b989652c49544c4877d9f015cc22e145a5ea8ea66c2921cd2"
-
-[[package]]
-name = "sanitize"
-version = "0.4.0"
 
 [[package]]
 name = "secp256k1"
