@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-arch_sdk = { path = "../../sdk" }
-arch_program = { path = "../../program" }
-arch_test_sdk = { path = "../../test_sdk" }
+arch_sdk = "0.5.0"
+arch_program = "0.5.0"
+arch_test_sdk = "0.5.0"
 hex = "0.4.3"
 bincode = "1.3.3"
 libp2p = { workspace = true}
