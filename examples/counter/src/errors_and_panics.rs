@@ -1162,21 +1162,26 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     let (first_account_pubkey, first_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
     let first_account_info = read_account_info(first_account_pubkey);
 
@@ -1193,7 +1198,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &first_account_pubkey,
-        &authority_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
@@ -1203,7 +1208,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         Some((second_anchoring.0, second_anchoring.1, false)),
@@ -1213,20 +1218,20 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
     let first_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[first_increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![first_account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_instruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -1309,21 +1314,26 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     let (first_account_pubkey, first_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
     let first_account_info = read_account_info(first_account_pubkey);
 
@@ -1338,7 +1348,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let first_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &first_account_pubkey,
-        &authority_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((first_anchoring.0, first_anchoring.1, true)),
@@ -1348,7 +1358,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let second_increase_instruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         None,
@@ -1358,20 +1368,20 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
     let first_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[first_increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![first_account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_instruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -1402,6 +1412,12 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         processed_transactions[1].status,
         Status::Processed
     ));
+
+    println!(
+        "processed_transactions[1] {} rollback_status {:?}",
+        processed_transactions[1].txid(),
+        processed_transactions[1].rollback_status
+    );
 
     assert!(matches!(
         processed_transactions[1].rollback_status,

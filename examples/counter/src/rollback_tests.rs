@@ -149,27 +149,32 @@ fn single_utxo_rbf_two_accounts() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+    let (first_account_pubkey, first_account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring(&first_account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -187,8 +192,8 @@ fn single_utxo_rbf_two_accounts() {
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
-        &account_pubkey,
-        &authority_pubkey,
+        &first_account_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
@@ -198,10 +203,10 @@ fn single_utxo_rbf_two_accounts() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -228,7 +233,7 @@ fn single_utxo_rbf_two_accounts() {
         )
     );
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     assert_eq!(first_account_data, CounterData::new(2, 1));
 
@@ -240,7 +245,7 @@ fn single_utxo_rbf_two_accounts() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
@@ -250,10 +255,10 @@ fn single_utxo_rbf_two_accounts() {
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_istruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -284,7 +289,7 @@ fn single_utxo_rbf_two_accounts() {
 
     thread::sleep(std::time::Duration::from_secs(10));
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
@@ -521,27 +526,32 @@ fn rbf_orphan_arch_txs() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+    let (first_account_pubkey, first_account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring(&first_account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -559,8 +569,8 @@ fn rbf_orphan_arch_txs() {
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
-        &account_pubkey,
-        &authority_pubkey,
+        &first_account_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
@@ -570,10 +580,10 @@ fn rbf_orphan_arch_txs() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -599,7 +609,7 @@ fn rbf_orphan_arch_txs() {
         )
     );
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     assert_eq!(first_account_data, CounterData::new(2, 1));
 
@@ -607,8 +617,8 @@ fn rbf_orphan_arch_txs() {
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
-        &account_pubkey,
-        &authority_pubkey,
+        &first_account_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         None,
@@ -618,10 +628,10 @@ fn rbf_orphan_arch_txs() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -639,7 +649,7 @@ fn rbf_orphan_arch_txs() {
 
     assert!(processed_transactions[0].bitcoin_txid.is_none());
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     assert_eq!(first_account_data, CounterData::new(3, 1));
 
@@ -651,7 +661,7 @@ fn rbf_orphan_arch_txs() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
@@ -661,10 +671,10 @@ fn rbf_orphan_arch_txs() {
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_istruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -695,7 +705,7 @@ fn rbf_orphan_arch_txs() {
 
     thread::sleep(std::time::Duration::from_secs(10));
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
@@ -732,27 +742,32 @@ fn rbf_reorg() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
-    let (account_pubkey, account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+    let (first_account_pubkey, first_account_keypair) =
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
-    let anchoring = generate_anchoring(&account_pubkey);
+    let anchoring = generate_anchoring(&first_account_pubkey);
 
     let btc_block_hash = mine_block();
 
@@ -770,8 +785,8 @@ fn rbf_reorg() {
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
-        &account_pubkey,
-        &authority_pubkey,
+        &first_account_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
@@ -781,10 +796,10 @@ fn rbf_reorg() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -812,7 +827,7 @@ fn rbf_reorg() {
         )
     );
 
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
     assert_eq!(first_account_data, CounterData::new(2, 1));
@@ -845,7 +860,7 @@ fn rbf_reorg() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
@@ -855,10 +870,10 @@ fn rbf_reorg() {
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_istruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -886,13 +901,13 @@ fn rbf_reorg() {
     );
 
     thread::sleep(Duration::from_secs(5));
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
 
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
     println!(
         "First account data : {:?}",
-        read_account_info(account_pubkey)
+        read_account_info(first_account_pubkey)
     );
     println!(
         "Second account data : {:?}",
@@ -922,8 +937,8 @@ fn rbf_reorg() {
 
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
-        &account_pubkey,
-        &authority_pubkey,
+        &first_account_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         None,
@@ -933,10 +948,10 @@ fn rbf_reorg() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -955,10 +970,13 @@ fn rbf_reorg() {
     assert!(processed_transactions[0].bitcoin_txid.is_none());
 
     thread::sleep(Duration::from_secs(5));
-    let first_account_data = get_account_counter(&account_pubkey).unwrap();
+    let first_account_data = get_account_counter(&first_account_pubkey).unwrap();
     let second_account_data = get_account_counter(&second_account_pubkey).unwrap();
 
-    println!("First account : {:?}", read_account_info(account_pubkey));
+    println!(
+        "First account : {:?}",
+        read_account_info(first_account_pubkey)
+    );
     println!(
         "Second account : {:?}",
         read_account_info(second_account_pubkey)
