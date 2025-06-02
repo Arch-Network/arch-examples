@@ -121,7 +121,10 @@ fn poc_inflate_balance() {
 
     assert_eq!(
         block_transactions[0].status,
-        Status::Failed("verify_and_prepare_block: failed to process transaction: Duplicate account keys in message not allowed".to_string()),
+        Status::Failed(
+            "verify_and_prepare_block: failed to process transaction: duplicate account keys"
+                .to_string()
+        ),
         "Transaction shouldn't have passed"
     );
 
