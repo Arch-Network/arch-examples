@@ -315,30 +315,39 @@ fn single_utxo_rbf_three_accounts() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (first_authority_keypair, first_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+
+    let (second_authority_keypair, second_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
+
+    let (third_authority_keypair, third_authority_pubkey, _) =
+        generate_new_keypair(BITCOIN_NETWORK);
+    create_and_fund_account_with_faucet(&third_authority_keypair, BITCOIN_NETWORK);
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
         ELF_PATH.to_string(),
         program_keypair,
-        authority_keypair,
+        first_authority_keypair,
     );
 
     print_title("First Counter Initialization and increase", 5);
 
     let (account_pubkey, account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &first_authority_keypair).unwrap();
 
     print_title("Second Counter Initialization and increase", 5);
 
     let (second_account_pubkey, second_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &second_authority_keypair).unwrap();
 
     print_title("Third Counter Initialization and increase", 5);
 
     let (third_account_pubkey, third_account_keypair) =
-        start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
+        start_new_counter(&program_pubkey, 1, 1, &third_authority_keypair).unwrap();
 
     let anchoring = generate_anchoring(&account_pubkey);
 
@@ -359,7 +368,7 @@ fn single_utxo_rbf_three_accounts() {
     let increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &account_pubkey,
-        &authority_pubkey,
+        &first_authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
@@ -369,10 +378,10 @@ fn single_utxo_rbf_three_accounts() {
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[increase_istruction],
-            Some(authority_pubkey),
+            Some(first_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![account_keypair, authority_keypair],
+        vec![account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -410,7 +419,7 @@ fn single_utxo_rbf_three_accounts() {
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &second_account_pubkey,
-        &authority_pubkey,
+        &second_authority_pubkey,
         false,
         false,
         Some((anchoring.0.clone(), anchoring.1.clone(), false)),
@@ -420,10 +429,10 @@ fn single_utxo_rbf_three_accounts() {
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[second_increase_istruction],
-            Some(authority_pubkey),
+            Some(second_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![second_account_keypair, authority_keypair],
+        vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
     );
 
@@ -444,7 +453,7 @@ fn single_utxo_rbf_three_accounts() {
     let third_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
         &third_account_pubkey,
-        &authority_pubkey,
+        &third_authority_pubkey,
         false,
         false,
         Some((anchoring.0, anchoring.1, false)),
@@ -454,10 +463,10 @@ fn single_utxo_rbf_three_accounts() {
     let third_transaction = build_and_sign_transaction(
         ArchMessage::new(
             &[third_increase_istruction],
-            Some(authority_pubkey),
+            Some(third_authority_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![third_account_keypair, authority_keypair],
+        vec![third_account_keypair, third_authority_keypair],
         BITCOIN_NETWORK,
     );
 
