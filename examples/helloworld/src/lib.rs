@@ -84,7 +84,7 @@ mod tests {
         // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
         println!(
-            "\x1b[32m Step 1/4 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
+            "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
             arch_test_sdk::constants::get_explorer_address_url(BITCOIN_NETWORK, &address.to_string())
         );
 
@@ -116,7 +116,7 @@ mod tests {
 
         assert!(matches!(processed_tx.status, Status::Processed));
 
-        println!("\x1b[32m Step 2/4 Successful :\x1b[0m Arch Account successfully created",);
+        println!("\x1b[32m Step 2/3 Successful :\x1b[0m Arch Account successfully created",);
 
         /* ---------- CALLING HELLO WORLD PROGRAM WITH THE CREATED ACCOUNT ---------- */
 
@@ -160,7 +160,7 @@ mod tests {
         );
 
         println!(
-            "\x1b[32m Step 4/4 Successful :\x1b[0m Hello World program call was successful ! ",
+            "\x1b[32m Step 3/3 Successful :\x1b[0m Hello World program call was successful ! ",
         );
 
         print_title(
