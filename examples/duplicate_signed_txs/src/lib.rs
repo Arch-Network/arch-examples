@@ -1,8 +1,8 @@
+#![cfg(test)]
 use arch_program::sanitized::ArchMessage;
 use bitcoin::XOnlyPublicKey;
 
-use arch_program::account::{AccountMeta, MIN_ACCOUNT_LAMPORTS};
-use arch_program::instruction::Instruction;
+use arch_program::account::MIN_ACCOUNT_LAMPORTS;
 use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction;
 use arch_sdk::{

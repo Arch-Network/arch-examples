@@ -1,3 +1,4 @@
+#![cfg(test)]
 use std::{fs, path::PathBuf};
 
 use arch_program::{

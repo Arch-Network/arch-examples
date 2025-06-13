@@ -1,3 +1,4 @@
+#![cfg(test)]
 use arch_program::sanitized::ArchMessage;
 use bitcoin::XOnlyPublicKey;
 
