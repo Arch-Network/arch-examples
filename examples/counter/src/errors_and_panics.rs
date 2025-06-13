@@ -34,6 +34,9 @@ fn counter_inc_single_instruction_fail() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
+    // Print bitcoin network
+    println!("Bitcoin network: {:?}", BITCOIN_NETWORK);
+
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
     create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
