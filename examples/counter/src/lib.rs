@@ -1,5 +1,5 @@
 #![cfg(test)]
-pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/counter_program.so";
+pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/counter_program.so";
 
 pub mod counter_helpers;
 pub mod counter_instructions;
