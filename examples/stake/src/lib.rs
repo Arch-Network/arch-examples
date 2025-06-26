@@ -1,7 +1,7 @@
 #[cfg(test)]
 pub mod builtin_stake_test;
 
-pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/stake_program.so";
+pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/stake_program.so";
 
 #[cfg(test)]
 mod stake_tests {

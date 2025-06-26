@@ -1,4 +1,4 @@
-pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/clock_program.so";
+pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/clock_program.so";
 
 #[cfg(test)]
 mod clock_tests {

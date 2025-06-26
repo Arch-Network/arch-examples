@@ -41,14 +41,14 @@ mod tests {
 
         let program_pubkey = deploy_program(
             "Hello World Program".to_string(),
-            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
             program_keypair,
             authority_keypair,
         );
 
         let program_account_info = read_account_info(program_pubkey);
 
-        let elf = fs::read("program/target/sbpf-solana-solana/release/helloworldprogram.so")
+        let elf = fs::read("program/target/sbf-solana-solana/release/helloworldprogram.so")
             .expect("elf path should be available");
 
         assert!(program_account_info.data[LoaderState::program_data_offset()..] == elf);
@@ -70,7 +70,7 @@ mod tests {
 
         let program_pubkey = deploy_program(
             "Hello World Program".to_string(),
-            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            "program/target/sbf-solana-solana/release/helloworldprogram.so".to_string(),
             program_keypair,
             authority_keypair,
         );

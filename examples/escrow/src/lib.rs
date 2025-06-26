@@ -1,4 +1,4 @@
-pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/escrow_program.so";
+pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/escrow_program.so";
 
 /// Running Tests
 #[cfg(test)]

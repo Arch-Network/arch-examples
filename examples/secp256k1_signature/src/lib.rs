@@ -1,7 +1,7 @@
 #[cfg(test)]
 pub mod secp256k1_signature_tests {
     pub const ELF_PATH: &str =
-        "./program/target/sbpf-solana-solana/release/secp256k1_signature_program.so";
+        "./program/target/sbf-solana-solana/release/secp256k1_signature_program.so";
     use arch_program::account::AccountMeta;
     use arch_program::instruction::Instruction;
     use arch_program::sanitized::ArchMessage;
