@@ -17,7 +17,7 @@ use arch_test_sdk::{
     },
 };
 
-pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/balance_inflation_poc.so";
+pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/balance_inflation_poc.so";
 
 #[ignore]
 #[test]
