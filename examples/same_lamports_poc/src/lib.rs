@@ -18,7 +18,7 @@ use arch_test_sdk::{
     },
 };
 
-pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/same_lamports_poc.so";
+pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/same_lamports_poc.so";
 
 #[ignore]
 #[should_panic]

@@ -17,7 +17,7 @@ use arch_test_sdk::{
     },
 };
 
-pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/unbalanced_cpi_poc.so";
+pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/unbalanced_cpi_poc.so";
 #[ignore]
 #[test]
 fn poc_unbalanced_cpi() {
