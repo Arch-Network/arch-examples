@@ -1,4 +1,5 @@
 pub(crate) mod shared_validator_state;
+mod update_pubkey_package;
 pub(crate) mod utils;
 mod whitelist;
 #[cfg(test)]
