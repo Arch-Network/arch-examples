@@ -177,7 +177,7 @@ mod standalone_tests {
 // Integration tests that require runtime environment (COMMENTED OUT DUE TO WORKSPACE DEPENDENCIES)
 #[cfg(test)]
 pub mod keccak256_hash_tests {
-    pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/keccak256hashprogram.so";
+    pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/keccak256hashprogram.so";
 
     // All integration tests commented out due to dependency issues
     // Uncomment when arch SDK dependencies are available
