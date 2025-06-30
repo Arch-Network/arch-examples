@@ -6,6 +6,7 @@ pub const ELF_PATH: &str = "./program/target/sbf-solana-solana/release/stake_pro
 #[cfg(test)]
 mod stake_tests {
     use crate::ELF_PATH;
+    use arch_program::hash::Hash;
     use arch_program::{
         account::AccountMeta, program_pack::Pack, pubkey::Pubkey, sanitized::ArchMessage,
         utxo::UtxoMeta,
@@ -24,7 +25,6 @@ mod stake_tests {
     };
     use bitcoin::key::Keypair;
     use borsh::{BorshDeserialize, BorshSerialize};
-
     // Define our instruction types
     #[derive(BorshSerialize, BorshDeserialize, Debug)]
     pub enum StakeInstruction {
@@ -193,7 +193,7 @@ mod stake_tests {
         wallet_address: Pubkey,
         funder_address_keypair: Keypair,
         token_mint_address: Pubkey,
-        recent_blockhash: String,
+        recent_blockhash: Hash,
     ) -> Pubkey {
         let associated_account_address =
             apl_associated_token_account::get_associated_token_address_and_bump_seed(
@@ -243,7 +243,7 @@ mod stake_tests {
         user_ata: Pubkey,
         user_pubkey: Pubkey,
         user_keypair: Keypair,
-        recent_blockhash: String,
+        recent_blockhash: Hash,
     ) {
         let mint_to_txid = build_and_sign_transaction(
             ArchMessage::new(
@@ -283,7 +283,7 @@ mod stake_tests {
         stake_account: Pubkey,
         mint_pubkey: Pubkey,
         program_pubkey: Pubkey,
-        recent_blockhash: String,
+        recent_blockhash: Hash,
     ) {
         let serialized_initialize_input = borsh::to_vec(&StakeInstruction::Initialize {
             lockup_duration: 0,
@@ -327,7 +327,7 @@ mod stake_tests {
         stake_token_account: Pubkey,
         mint_pubkey: Pubkey,
         program_pubkey: Pubkey,
-        recent_blockhash: String,
+        recent_blockhash: Hash,
     ) {
         let stake_amount = 100;
         let serialized_stake_input = borsh::to_vec(&StakeInstruction::Stake {
@@ -384,7 +384,7 @@ mod stake_tests {
         user_ata: Pubkey,
         stake_token_account: Pubkey,
         program_pubkey: Pubkey,
-        recent_blockhash: String,
+        recent_blockhash: Hash,
     ) {
         let unstake_amount = 100;
         let serialized_unstake_input = borsh::to_vec(&StakeInstruction::Unstake {

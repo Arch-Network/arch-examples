@@ -3,6 +3,7 @@ mod whitelist_tests {
     use crate::shared_validator_state::shared_validator_state_tests::try_to_initialize_shared_validator_account;
     use crate::utils::{get_bootnode_keypair_from_file, try_to_create_and_fund_account};
     use arch_program::bitcoin::key::Keypair;
+    use arch_program::hash::Hash;
     use arch_program::vote::instruction::{add_peer_to_whitelist, remove_peer_from_whitelist};
     use arch_program::vote::validator_state::SharedValidatorState;
     use arch_program::{pubkey::Pubkey, sanitized::ArchMessage};
@@ -16,7 +17,7 @@ mod whitelist_tests {
         client: &ArchRpcClient,
         validator_pubkey: &Pubkey,
         signing_keypair: &Keypair,
-    ) -> (SharedValidatorState, String) {
+    ) -> (SharedValidatorState, Hash) {
         // Step 1: Get keypair account
         let shared_validator_pubkey = Pubkey::from_slice(&[2; 32]);
 
@@ -70,7 +71,7 @@ mod whitelist_tests {
         client: &ArchRpcClient,
         validator_pubkey: &Pubkey,
         signing_keypair: &Keypair,
-    ) -> (SharedValidatorState, String) {
+    ) -> (SharedValidatorState, Hash) {
         // Step 1: Get keypair account
         let shared_validator_pubkey = Pubkey::from_slice(&[2; 32]);
 

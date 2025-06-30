@@ -5,8 +5,7 @@ pub(crate) mod shared_validator_state_tests {
         pubkey::Pubkey,
         sanitized::ArchMessage,
         vote::{
-            instruction::initialize_shared_validator_account, state::VoteState,
-            validator_state::SharedValidatorState,
+            instruction::initialize_shared_validator_account, validator_state::SharedValidatorState,
         },
     };
     use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
@@ -15,10 +14,9 @@ pub(crate) mod shared_validator_state_tests {
         helper::{
             create_and_fund_account_with_faucet, read_account_info, send_transactions_and_wait,
         },
-        logging::{init_logging, log_scenario_start},
     };
 
-    use crate::utils::{get_bootnode_keypair_from_file, get_peer_keypair_from_file};
+    use crate::utils::get_bootnode_keypair_from_file;
 
     pub(crate) fn try_to_initialize_shared_validator_account(client: &ArchRpcClient) {
         let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);

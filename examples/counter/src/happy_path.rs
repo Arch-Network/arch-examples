@@ -372,14 +372,24 @@ fn counter_init_and_inc_anchored() {
         "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
         arch_test_sdk::constants::get_explorer_tx_url(
             BITCOIN_NETWORK,
-            &processed_transactions[0].bitcoin_txid.clone().unwrap()
+            &processed_transactions[0]
+                .bitcoin_txid
+                .clone()
+                .unwrap()
+                .to_string()
         )
     );
 
     let _tx_info = rpc
         .get_raw_transaction_info(
-            &bitcoin::Txid::from_str(&processed_transactions[0].bitcoin_txid.clone().unwrap())
-                .unwrap(),
+            &bitcoin::Txid::from_str(
+                &processed_transactions[0]
+                    .bitcoin_txid
+                    .clone()
+                    .unwrap()
+                    .to_string(),
+            )
+            .unwrap(),
             None,
         )
         .unwrap();
@@ -433,6 +443,7 @@ fn counter_init_and_inc_anchored() {
                 .bitcoin_txid
                 .clone()
                 .unwrap()
+                .to_string()
         )
     );
 
@@ -442,7 +453,8 @@ fn counter_init_and_inc_anchored() {
                 &second_processed_transactions[0]
                     .bitcoin_txid
                     .clone()
-                    .unwrap(),
+                    .unwrap()
+                    .to_string(),
             )
             .unwrap(),
             None,
