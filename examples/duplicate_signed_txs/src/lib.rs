@@ -5,15 +5,10 @@ use bitcoin::XOnlyPublicKey;
 use arch_program::account::MIN_ACCOUNT_LAMPORTS;
 use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction;
-use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
-};
+use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient};
 use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait, send_utxo,
-    },
+    constants::{BITCOIN_NETWORK, NODE1_ADDRESS},
+    helper::{create_and_fund_account_with_faucet, send_transactions_and_wait},
 };
 
 #[ignore]
@@ -49,5 +44,5 @@ fn poc_duplicate_signed_txs() {
         BITCOIN_NETWORK,
     );
 
-    let processed_tx = send_transactions_and_wait(vec![tx.clone(), tx]);
+    let _processed_tx = send_transactions_and_wait(vec![tx.clone(), tx]);
 }
