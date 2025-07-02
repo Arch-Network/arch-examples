@@ -12,16 +12,15 @@ use arch_program::{
     log::sol_log_compute_units,
     program_error::ProgramError,
     pubkey::Pubkey,
-    transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use std::str::FromStr;
 
 entrypoint!(process_instruction);
-pub fn process_instruction(
+pub fn process_instruction<'a>(
     _program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'a>],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
     let account_iter = &mut accounts.iter();
@@ -131,16 +130,13 @@ pub fn process_instruction(
                 })
             }
         }
-        let tx_to_sign = TransactionToSign {
-            tx_bytes: &bitcoin::consensus::serialize(&tx),
-            inputs_to_sign: &[InputToSign {
-                index,
-                signer: account.key.clone(),
-            }],
-        };
+        let inputs = [InputToSign {
+            index,
+            signer: account.key.clone(),
+        }];
 
         sol_log_compute_units();
-        set_transaction_to_sign(accounts, tx_to_sign)?
+        set_transaction_to_sign(accounts, &tx, &inputs)?
     }
 
     if counter_input.should_panic {

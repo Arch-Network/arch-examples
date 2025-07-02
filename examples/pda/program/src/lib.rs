@@ -8,7 +8,6 @@ use arch_program::{
     msg,
     program::{
         get_account_script_pubkey, get_bitcoin_block_height, invoke_signed, next_account_info,
-        set_transaction_to_sign,
     },
     program_error::ProgramError,
     pubkey::Pubkey,

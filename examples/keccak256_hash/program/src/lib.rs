@@ -12,7 +12,6 @@ use arch_program::{
     },
     program_error::ProgramError,
     pubkey::Pubkey,
-    transaction_to_sign::TransactionToSign,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -25,9 +24,9 @@ entrypoint!(process_instruction);
 /// * `_program_id` - The public key of our program
 /// * `accounts` - Array of accounts that this instruction will operate on
 /// * `instruction_data` - The data passed to this instruction, containing test parameters
-pub fn process_instruction(
+pub fn process_instruction<'a>(
     _program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'a>],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
     msg!("Keccak256 Hash Example Program - Starting execution");
@@ -256,19 +255,15 @@ fn handle_bitcoin_transaction(account: &AccountInfo, tx_hex: &[u8]) -> Result<()
     add_state_transition(&mut tx, account);
     tx.input.push(fees_tx.input[0].clone());
 
-    // Create the transaction signing request
-    let tx_to_sign = TransactionToSign {
-        tx_bytes: &bitcoin::consensus::serialize(&tx),
-        inputs_to_sign: &[InputToSign {
-            index: 0,
-            signer: account.key.clone(),
-        }],
-    };
-
     msg!("Transaction prepared for signing");
 
+    let inputs = [InputToSign {
+        index: 0,
+        signer: account.key.clone(),
+    }];
+
     // Submit the transaction for signing
-    set_transaction_to_sign(&[account.clone()], tx_to_sign).map_err(|_| ProgramError::Custom(1))?;
+    set_transaction_to_sign(&[account.clone()], &tx, &inputs)?;
 
     Ok(())
 }

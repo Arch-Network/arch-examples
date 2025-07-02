@@ -9,7 +9,6 @@ use arch_program::{
     program_error::ProgramError,
     pubkey::Pubkey,
     system_instruction,
-    transaction_to_sign::TransactionToSign,
     utxo::UtxoMeta,
     system_program::SYSTEM_PROGRAM_ID,
 };
@@ -32,9 +31,9 @@ pub struct CreateAccountParams {
     pub tx_hex: Vec<u8>, // Bitcoin transaction for fees
 }
 
-pub fn process_instruction(
+pub fn process_instruction<'a>(
     _program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'a>],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
     // Step 1: Get account iterators for the accounts we need to work with
@@ -101,13 +100,10 @@ pub fn process_instruction(
     tx.input.push(fees_tx.input[0].clone());
 
     // Create the transaction signing request
-    let tx_to_sign = TransactionToSign {
-        tx_bytes: &bitcoin::consensus::serialize(&tx),
-        inputs_to_sign: &[InputToSign {
-            index: 0,
-            signer: factory_state_account.key.clone(),
-        }],
-    };
+    let inputs = [InputToSign {
+        index: 0,
+        signer: factory_state_account.key.clone(),
+    }];
 
     // Log the successful account creation
     msg!(
@@ -117,7 +113,9 @@ pub fn process_instruction(
     );
 
     // Step 7: Queue the transaction for signing
-    set_transaction_to_sign(accounts, tx_to_sign)
+    set_transaction_to_sign(accounts, &tx, &inputs)?;
+
+    Ok(())
 }
 
 // Register the entry point for our program

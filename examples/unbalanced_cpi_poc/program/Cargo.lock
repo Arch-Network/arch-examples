@@ -28,13 +28,14 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.5.0"
+version = "0.5.3"
 dependencies = [
  "anyhow",
  "bincode",
  "bitcode",
  "bitcoin",
  "bitcoin-io",
+ "bitcoin_slices",
  "borsh",
  "bs58",
  "bytemuck",
@@ -206,6 +207,12 @@ dependencies = [
  "hex-conservative",
  "serde",
 ]
+
+[[package]]
+name = "bitcoin_slices"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7943d4257fdfc85afe2a13d2b539a5213e97bb978329dd79b624acbce73042fb"
 
 [[package]]
 name = "block-buffer"

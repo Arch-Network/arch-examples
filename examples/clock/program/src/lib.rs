@@ -11,7 +11,6 @@ use arch_program::{
     msg,
     program::{
         get_account_script_pubkey, get_bitcoin_block_height, get_clock, invoke, next_account_info,
-        set_transaction_to_sign,
     },
     program_error::ProgramError,
     pubkey::Pubkey,
@@ -52,10 +51,10 @@ pub fn process_instruction(
     }
 
     account
-    .data
-    .try_borrow_mut()
-    .map_err(|_e| ProgramError::Custom(503))?
-    .copy_from_slice(&serialized_clock);
+        .data
+        .try_borrow_mut()
+        .map_err(|_e| ProgramError::Custom(503))?
+        .copy_from_slice(&serialized_clock);
 
     Ok(())
 }

@@ -9,10 +9,7 @@ use arch_program::{
     input_to_sign::InputToSign,
     instruction::Instruction,
     msg,
-    program::{
-        get_account_script_pubkey, get_bitcoin_block_height, invoke, next_account_info,
-        set_transaction_to_sign,
-    },
+    program::{get_account_script_pubkey, get_bitcoin_block_height, invoke, next_account_info},
     program_error::ProgramError,
     pubkey::Pubkey,
     sol_secp256k1_recover::secp256k1_recover,

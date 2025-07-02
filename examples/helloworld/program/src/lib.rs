@@ -11,7 +11,6 @@ use arch_program::{
     },
     program_error::ProgramError,
     pubkey::Pubkey,
-    transaction_to_sign::TransactionToSign,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -25,9 +24,9 @@ entrypoint!(process_instruction);
 /// * `_program_id` - The public key of our program
 /// * `accounts` - Array of accounts that this instruction will operate on
 /// * `instruction_data` - The data passed to this instruction, containing the name
-pub fn process_instruction(
+pub fn process_instruction<'a>(
     _program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    accounts: &'a [AccountInfo<'a>],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
     // Get the current Bitcoin block height for reference
@@ -80,19 +79,15 @@ pub fn process_instruction(
     add_state_transition(&mut tx, account);
     tx.input.push(fees_tx.input[0].clone());
 
-    // Create the transaction signing request
-    let tx_to_sign = TransactionToSign {
-        tx_bytes: &bitcoin::consensus::serialize(&tx),
-        inputs_to_sign: &[InputToSign {
-            index: 0,
-            signer: account.key.clone(),
-        }],
-    };
-
-    msg!("tx_to_sign{:?}", tx_to_sign);
+    let inputs = [InputToSign {
+        index: 0,
+        signer: account.key.clone(),
+    }];
 
     // Submit the transaction for signing
-    set_transaction_to_sign(accounts, tx_to_sign)
+    set_transaction_to_sign(accounts, &tx, &inputs)?;
+
+    Ok(())
 }
 
 /// Parameters passed to our program
