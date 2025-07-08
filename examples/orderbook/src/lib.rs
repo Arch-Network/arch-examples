@@ -24,6 +24,7 @@ mod tests {
     };
     use bitcoin::key::Keypair;
     use serial_test::serial;
+    use std::sync::{Arc, Condvar, Mutex};
 
     use orderbook_program::{
         instruction::OrderbookInstruction,
@@ -94,6 +95,61 @@ mod tests {
         assert_eq!(orderbook_state.second_token_mint, second_token_mint_pubkey);
 
         orderbook_pubkey
+    }
+
+    // #[test]
+    fn mint_tokens_test() {
+        let max_outstanding = 100;
+        let outstanding = Arc::new((Mutex::new(0_u64), Condvar::new()));
+        for i in 0..1000000 {
+            loop {
+                let (lock, cv) = &*outstanding;
+                let mut current = lock.lock().unwrap();
+                if *current < max_outstanding {
+                    *current += 1;
+                    println!(
+                        "mint_tokens_test: current = {current}, minting tokens: {}",
+                        i
+                    );
+                    break;
+                }
+                println!("mint_tokens_test: current = {current}, to wait ...");
+                std::mem::drop(cv.wait(current).unwrap());
+            }
+
+            let outstanding_cl = outstanding.clone();
+            std::thread::spawn(move || {
+                init_logging();
+                let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+                let (authority_keypair, authority_pubkey, _) =
+                    generate_new_keypair(BITCOIN_NETWORK);
+                create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
+                // Initialize mint token
+                let (_, first_token_mint_pubkey) =
+                    initialize_mint_token(&client, authority_pubkey, authority_keypair);
+
+                // Create token account
+                let (_, first_token_account_pubkey) =
+                    initialize_token_account(&client, first_token_mint_pubkey, authority_keypair);
+
+                // Mint tokens
+                mint_tokens(
+                    &client,
+                    &first_token_mint_pubkey,
+                    &first_token_account_pubkey,
+                    &authority_pubkey,
+                    authority_keypair,
+                    100,
+                );
+
+                let (lock, cv) = &*outstanding_cl;
+                let mut current = lock.lock().unwrap();
+                *current -= 1;
+                cv.notify_one();
+            });
+        }
     }
 
     #[ignore]
