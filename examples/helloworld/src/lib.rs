@@ -171,4 +171,76 @@ mod tests {
             5,
         );
     }
+
+    #[ignore]
+    #[serial]
+    #[test]
+    fn double_spent_shouldnt_be_possible() {
+        let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+        let (program_keypair, _) =
+            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+        // let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (authority_keypair, authority_pubkey) =
+            with_secret_key_file(".caller.json").expect("getting caller info should not fail");
+        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
+        let program_pubkey = deploy_program(
+            "Hello World Program".to_string(),
+            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            program_keypair,
+            authority_keypair,
+        );
+
+        print_title("ACCOUNT CREATION & PROGRAM CALL", 5);
+
+        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
+
+        let (first_account_keypair, first_account_pubkey, address) =
+            generate_new_keypair(BITCOIN_NETWORK);
+        // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
+        println!(
+            "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
+            arch_test_sdk::constants::get_explorer_address_url(BITCOIN_NETWORK, &address.to_string())
+        );
+
+        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
+
+        let (txid, vout) = send_utxo(first_account_pubkey);
+
+        let transaction = build_and_sign_transaction(
+            ArchMessage::new(
+                &[system_instruction::transfer(
+                    &authority_pubkey,
+                    &first_account_pubkey,
+                    100000,
+                )],
+                Some(authority_pubkey),
+                client.get_best_block_hash().unwrap(),
+            ),
+            vec![first_account_keypair, authority_keypair],
+            BITCOIN_NETWORK,
+        );
+        println!(
+            "Authority pubkey {:?}",
+            read_account_info(authority_pubkey).lamports
+        );
+        let arch_rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
+        let block_transactions: Vec<arch_sdk::ProcessedTransaction> =
+            send_transactions_and_wait(vec![transaction]);
+        println!(
+            "Authority pubkey {:?}",
+            read_account_info(authority_pubkey).lamports
+        );
+        println!(
+            "first_account_pubkey {:?}",
+            read_account_info(first_account_pubkey).lamports
+        );
+        let first_account_info = read_account_info(first_account_pubkey);
+        // txn not duplicated
+        assert_eq!(first_account_info.lamports, 100000);
+    }
 }
