@@ -45,7 +45,8 @@ mod update_pubkey_package_tests {
             ),
             vec![user_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
 

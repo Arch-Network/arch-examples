@@ -125,7 +125,8 @@ fn counter_init_and_inc_test() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let _block_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -193,7 +194,8 @@ fn counter_init_and_inc_transaction_test() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let _block_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -251,7 +253,8 @@ fn counter_init_and_inc_block_test() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_increase_istruction = get_counter_increase_instruction(
         &program_pubkey,
@@ -271,7 +274,9 @@ fn counter_init_and_inc_block_test() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
+
     println!(
         "TXIDS : first tx {}, second {}",
         first_transaction.txid(),
@@ -341,7 +346,8 @@ fn counter_init_and_inc_anchored() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -416,7 +422,8 @@ fn counter_init_and_inc_anchored() {
         ),
         vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 

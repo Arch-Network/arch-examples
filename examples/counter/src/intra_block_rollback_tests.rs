@@ -77,7 +77,8 @@ fn test_intra_block_tx_cache() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_transaction = build_and_sign_transaction(
         ArchMessage::new(
@@ -87,7 +88,8 @@ fn test_intra_block_tx_cache() {
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let block_transactions = send_transactions_and_wait(vec![transaction, second_transaction]);
 

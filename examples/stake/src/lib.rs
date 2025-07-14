@@ -217,7 +217,7 @@ mod stake_tests {
         data.extend_from_slice(&txid.as_bytes());
         data.extend_from_slice(&vout.to_le_bytes());
 
-        let create_ata_txid = build_and_sign_transaction(
+        let create_ata_tx = build_and_sign_transaction(
             ArchMessage::new(
                 &[arch_program::instruction::Instruction {
                     program_id: apl_associated_token_account::id(),
@@ -229,9 +229,10 @@ mod stake_tests {
             ),
             vec![funder_address_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![create_ata_txid]);
+        let processed_tx = send_transactions_and_wait(vec![create_ata_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         associated_account_address
@@ -245,7 +246,7 @@ mod stake_tests {
         user_keypair: Keypair,
         recent_blockhash: Hash,
     ) {
-        let mint_to_txid = build_and_sign_transaction(
+        let mint_to_tx = build_and_sign_transaction(
             ArchMessage::new(
                 &[apl_token::instruction::mint_to(
                     &apl_token::id(),
@@ -261,8 +262,9 @@ mod stake_tests {
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,
-        );
-        let processed_tx = send_transactions_and_wait(vec![mint_to_txid]);
+        )
+        .expect("Failed to build and sign transaction");
+        let processed_tx = send_transactions_and_wait(vec![mint_to_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         let user_ata_info = read_account_info(user_ata);
@@ -292,7 +294,7 @@ mod stake_tests {
         })
         .unwrap();
 
-        let initialize_stake_txid = build_and_sign_transaction(
+        let initialize_stake_tx = build_and_sign_transaction(
             ArchMessage::new(
                 &[arch_program::instruction::Instruction {
                     program_id: program_pubkey,
@@ -310,8 +312,9 @@ mod stake_tests {
             ),
             vec![user_keypair, mint_keypair],
             BITCOIN_NETWORK,
-        );
-        let processed_tx = send_transactions_and_wait(vec![initialize_stake_txid]);
+        )
+        .expect("Failed to build and sign transaction");
+        let processed_tx = send_transactions_and_wait(vec![initialize_stake_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         // check changes after initialize stake
@@ -344,7 +347,7 @@ mod stake_tests {
             AccountMeta::new(apl_token::id(), false),
         ];
 
-        let stake_txid = build_and_sign_transaction(
+        let stake_tx = build_and_sign_transaction(
             ArchMessage::new(
                 &[arch_program::instruction::Instruction {
                     program_id: program_pubkey,
@@ -356,9 +359,10 @@ mod stake_tests {
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![stake_txid]);
+        let processed_tx = send_transactions_and_wait(vec![stake_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         //check that staked amount was updated
@@ -401,7 +405,7 @@ mod stake_tests {
             AccountMeta::new(apl_token::id(), false),
         ];
 
-        let unstake_txid = build_and_sign_transaction(
+        let unstake_tx = build_and_sign_transaction(
             ArchMessage::new(
                 &[arch_program::instruction::Instruction {
                     program_id: program_pubkey,
@@ -413,9 +417,10 @@ mod stake_tests {
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![unstake_txid]);
+        let processed_tx = send_transactions_and_wait(vec![unstake_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         //check that staked amount was updated

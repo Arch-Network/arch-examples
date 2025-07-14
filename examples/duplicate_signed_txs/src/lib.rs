@@ -42,7 +42,8 @@ fn poc_duplicate_signed_txs() {
         ),
         vec![authority_keypair.clone(), account_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let _processed_tx = send_transactions_and_wait(vec![tx.clone(), tx]);
 }

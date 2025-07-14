@@ -208,7 +208,8 @@ fn single_utxo_rbf_two_accounts() {
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -264,7 +265,8 @@ fn single_utxo_rbf_two_accounts() {
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
@@ -388,7 +390,8 @@ fn single_utxo_rbf_three_accounts() {
         ),
         vec![account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -443,7 +446,8 @@ fn single_utxo_rbf_three_accounts() {
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
@@ -477,7 +481,8 @@ fn single_utxo_rbf_three_accounts() {
         ),
         vec![third_account_keypair, third_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let third_processed_transactions = send_transactions_and_wait(vec![third_transaction]);
 
@@ -604,7 +609,8 @@ fn rbf_orphan_arch_txs() {
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -658,7 +664,9 @@ fn rbf_orphan_arch_txs() {
         BITCOIN_NETWORK,
     );
 
-    let processed_transactions = send_transactions_and_wait(vec![transaction]);
+    let processed_transactions = send_transactions_and_wait(vec![
+        transaction.expect("Failed to build and sign transaction")
+    ]);
 
     println!(
         "Second increase for first account processed transaction id : {}",
@@ -699,7 +707,8 @@ fn rbf_orphan_arch_txs() {
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
@@ -827,7 +836,9 @@ fn rbf_reorg() {
         BITCOIN_NETWORK,
     );
 
-    let processed_transactions = send_transactions_and_wait(vec![transaction]);
+    let processed_transactions = send_transactions_and_wait(vec![
+        transaction.expect("Failed to build and sign transaction")
+    ]);
 
     println!(
         "First increase processed transaction id : {}",
@@ -909,7 +920,8 @@ fn rbf_reorg() {
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
 
@@ -988,7 +1000,8 @@ fn rbf_reorg() {
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 

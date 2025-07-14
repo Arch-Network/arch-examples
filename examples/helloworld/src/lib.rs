@@ -108,7 +108,8 @@ mod tests {
             ),
             vec![first_account_keypair, authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let block_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -139,7 +140,8 @@ mod tests {
             ),
             vec![first_account_keypair, authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let block_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -222,7 +224,8 @@ mod tests {
             ),
             vec![first_account_keypair, authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
         println!(
             "Authority pubkey {:?}",
             read_account_info(authority_pubkey).lamports

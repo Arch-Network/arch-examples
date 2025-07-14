@@ -46,7 +46,7 @@ fn poc_inflate_balance() {
     let (txid, vout) = send_utxo(account_pubkey);
     println!("Account created with address, {:?}", account_pubkey.0);
 
-    let txid = build_and_sign_transaction(
+    let tx = build_and_sign_transaction(
         ArchMessage::new(
             &[system_instruction::create_account_with_anchor(
                 &fee_payer_pubkey,
@@ -62,9 +62,10 @@ fn poc_inflate_balance() {
         ),
         vec![authority_keypair.clone(), account_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
-    let processed_tx = send_transactions_and_wait(vec![txid]);
+    let processed_tx = send_transactions_and_wait(vec![tx]);
     assert_eq!(
         processed_tx[0].status,
         Status::Processed,
@@ -113,7 +114,8 @@ fn poc_inflate_balance() {
         message,
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let account_balance_before = read_account_info(account_pubkey).lamports;
     dbg!("Account balance before: ", account_balance_before);

@@ -81,7 +81,8 @@ mod tests {
             ),
             vec![*user_keypair, *vote_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
 
@@ -141,7 +142,8 @@ mod tests {
             ),
             vec![user_keypair, authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
 
@@ -197,7 +199,8 @@ mod tests {
             ),
             vec![user_keypair, authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
 

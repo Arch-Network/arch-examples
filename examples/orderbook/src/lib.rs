@@ -72,7 +72,8 @@ mod tests {
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -219,7 +220,8 @@ mod tests {
             ),
             vec![authority_keypair, token_mint_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -269,7 +271,8 @@ mod tests {
             ),
             vec![owner_keypair, token_account_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -312,7 +315,8 @@ mod tests {
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -590,7 +594,8 @@ mod tests {
             ),
             vec![*authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -846,7 +851,8 @@ mod tests {
             ),
             vec![*owner_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -1009,7 +1015,8 @@ mod tests {
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -1087,7 +1094,8 @@ mod tests {
             ),
             vec![funder_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
@@ -1248,7 +1256,8 @@ mod tests {
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transactions = send_transactions_and_wait(vec![transaction]);
 

@@ -78,7 +78,8 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
         ),
         vec![account_keypair, payer_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let block_transactions = send_transactions_and_wait(vec![transaction]);
 

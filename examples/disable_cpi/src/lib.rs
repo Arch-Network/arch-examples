@@ -62,7 +62,8 @@ mod tests {
             ),
             vec![authority_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transaction = send_transactions_and_wait(vec![tx.clone()])[0].clone();
 
@@ -132,7 +133,8 @@ mod tests {
             ),
             vec![authority_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transaction = send_transactions_and_wait(vec![cpi_tx.clone()])[0].clone();
 
@@ -206,7 +208,8 @@ mod tests {
             ),
             vec![authority_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_transaction = send_transactions_and_wait(vec![cpi_tx.clone()])[0].clone();
 

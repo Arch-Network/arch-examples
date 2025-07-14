@@ -108,13 +108,15 @@ fn poc_same_lamports() {
         message1,
         vec![account_keypair1, authority_keypair, account_keypair2],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let transaction2 = build_and_sign_transaction(
         message2,
         vec![account_keypair1, authority_keypair, account_keypair3],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let account1_balance_before = read_account_info(account_pubkey1).lamports;
     dbg!("Account 1 balance before: ", account1_balance_before);
@@ -180,7 +182,8 @@ fn create_account(
         ),
         vec![authority_keypair.clone(), account_keypair1],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_tx = send_transactions_and_wait(vec![txid1]);
     assert_eq!(

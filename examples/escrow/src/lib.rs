@@ -189,9 +189,10 @@ mod tests {
 
         let signers = vec![payer_keypair, mint_keypair];
 
-        let create_account_txid = build_and_sign_transaction(message, signers, BITCOIN_NETWORK);
+        let create_account_tx = build_and_sign_transaction(message, signers, BITCOIN_NETWORK)
+            .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![create_account_txid]);
+        let processed_tx = send_transactions_and_wait(vec![create_account_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         let message = ArchMessage::new(
@@ -209,9 +210,10 @@ mod tests {
 
         let signers = vec![payer_keypair, mint_keypair];
 
-        let initialize_mint_txid = build_and_sign_transaction(message, signers, BITCOIN_NETWORK);
+        let initialize_mint_tx = build_and_sign_transaction(message, signers, BITCOIN_NETWORK)
+            .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![initialize_mint_txid]);
+        let processed_tx = send_transactions_and_wait(vec![initialize_mint_tx]);
         assert!(processed_tx[0].status == Status::Processed);
 
         mint_pubkey
@@ -258,7 +260,8 @@ mod tests {
             ),
             vec![funder_address_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_tx = send_transactions_and_wait(vec![create_ata_txid]);
         assert!(processed_tx[0].status == Status::Processed);
@@ -328,7 +331,8 @@ mod tests {
             ),
             vec![maker_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
         let processed_tx = send_transactions_and_wait(vec![make_offer_txid]);
         assert!(processed_tx[0].status == Status::Processed);
     }
@@ -384,7 +388,8 @@ mod tests {
             ),
             vec![taker_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_tx = send_transactions_and_wait(vec![take_offer_txid]);
         assert!(processed_tx[0].status == Status::Processed);
@@ -414,7 +419,8 @@ mod tests {
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
         let processed_tx = send_transactions_and_wait(vec![mint_to_txid]);
         assert!(processed_tx[0].status == Status::Processed);
 

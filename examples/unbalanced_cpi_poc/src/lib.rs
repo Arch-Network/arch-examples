@@ -61,7 +61,8 @@ fn poc_unbalanced_cpi() {
         ),
         vec![authority_keypair.clone(), account_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let processed_tx = send_transactions_and_wait(vec![txid]);
     assert_eq!(
@@ -104,7 +105,8 @@ fn poc_unbalanced_cpi() {
         message,
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let account_balance_before = read_account_info(account_pubkey).lamports;
     dbg!("Account balance before: ", account_balance_before);

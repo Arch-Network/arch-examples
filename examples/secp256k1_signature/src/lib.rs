@@ -92,7 +92,8 @@ pub mod secp256k1_signature_tests {
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
         let block_transactions = send_transactions_and_wait(vec![transaction]);
         let processed_transaction = block_transactions[0].clone();
         assert!(matches!(processed_transaction.status, Status::Processed));
@@ -159,7 +160,8 @@ pub mod secp256k1_signature_tests {
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
         let block_transactions = send_transactions_and_wait(vec![transaction]);
         let processed_transaction = block_transactions[0].clone();
         assert!(matches!(processed_transaction.status, Status::Failed(_)));

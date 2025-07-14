@@ -49,7 +49,8 @@ mod whitelist_tests {
             ),
             vec![signing_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
         println!("\x1b[32m Step 2/3 Successful:\x1b[0m Whitelist addition transaction sent");
@@ -103,7 +104,8 @@ mod whitelist_tests {
             ),
             vec![signing_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
         println!("\x1b[32m Step 2/3 Successful:\x1b[0m Whitelist addition transaction sent");

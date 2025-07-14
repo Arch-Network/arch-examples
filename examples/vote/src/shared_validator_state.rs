@@ -83,7 +83,8 @@ pub(crate) mod shared_validator_state_tests {
             ),
             vec![user_keypair.clone()],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let processed_txs = send_transactions_and_wait(vec![tx]);
 

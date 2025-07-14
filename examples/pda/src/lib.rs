@@ -105,7 +105,8 @@ mod tests {
             ),
             vec![payer_account_keypair],
             BITCOIN_NETWORK,
-        );
+        )
+        .expect("Failed to build and sign transaction");
 
         let block_transactions = send_transactions_and_wait(vec![transaction]);
         let processed_tx = block_transactions[0].clone();

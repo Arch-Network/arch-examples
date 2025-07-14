@@ -56,7 +56,8 @@ pub(crate) fn start_new_counter(
         ),
         vec![fee_payer_keypair.clone(), account_key_pair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let _processed_tx = send_transactions_and_wait(vec![txid]);
 
@@ -90,7 +91,8 @@ pub(crate) fn start_new_counter(
         ),
         vec![fee_payer_keypair.clone(), account_key_pair],
         BITCOIN_NETWORK,
-    );
+    )
+    .expect("Failed to build and sign transaction");
 
     let _processed_tx = send_transactions_and_wait(vec![txid]);
 
