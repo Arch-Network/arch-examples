@@ -70,13 +70,13 @@ fn connect_nodes() {
         return;
     }
 
-    match rpc_node2.add_node(&BITCOIN_NODE1_P2P_ADDRESS) {
+    match rpc_node2.add_node(BITCOIN_NODE1_P2P_ADDRESS) {
         Ok(_) => {
             println!("Node added to node2");
         }
         Err(e) => println!("Error removing node from node2: {:?}", e),
     }
-    match rpc_node2.onetry_node(&BITCOIN_NODE1_P2P_ADDRESS) {
+    match rpc_node2.onetry_node(BITCOIN_NODE1_P2P_ADDRESS) {
         Ok(_) => {
             println!("Node added to node2");
         }
@@ -111,13 +111,13 @@ fn isolate_nodes() {
         return;
     }
 
-    match rpc_node2.remove_node(&BITCOIN_NODE1_P2P_ADDRESS) {
+    match rpc_node2.remove_node(BITCOIN_NODE1_P2P_ADDRESS) {
         Ok(_) => {
             println!("Node removed from node2");
         }
         Err(e) => println!("Error removing node from node2: {:?}", e),
     }
-    match rpc_node2.disconnect_node(&BITCOIN_NODE1_P2P_ADDRESS) {
+    match rpc_node2.disconnect_node(BITCOIN_NODE1_P2P_ADDRESS) {
         Ok(_) => {
             println!("Node disconnected from node2");
         }
@@ -230,11 +230,7 @@ fn single_utxo_rbf_two_accounts() {
         "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
         arch_test_sdk::constants::get_explorer_tx_url(
             BITCOIN_NETWORK,
-            &processed_transactions[0]
-                .bitcoin_txid
-                .clone()
-                .unwrap()
-                .to_string()
+            &processed_transactions[0].bitcoin_txid.unwrap().to_string()
         )
     );
 
@@ -288,7 +284,6 @@ fn single_utxo_rbf_two_accounts() {
             BITCOIN_NETWORK,
             &second_processed_transactions[0]
                 .bitcoin_txid
-                .clone()
                 .unwrap()
                 .to_string()
         )
@@ -411,11 +406,7 @@ fn single_utxo_rbf_three_accounts() {
         "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
         arch_test_sdk::constants::get_explorer_tx_url(
             BITCOIN_NETWORK,
-            &processed_transactions[0]
-                .bitcoin_txid
-                .clone()
-                .unwrap()
-                .to_string()
+            &processed_transactions[0].bitcoin_txid.unwrap().to_string()
         )
     );
 
@@ -505,7 +496,6 @@ fn single_utxo_rbf_three_accounts() {
             BITCOIN_NETWORK,
             &third_processed_transactions[0]
                 .bitcoin_txid
-                .clone()
                 .unwrap()
                 .to_string()
         )
@@ -630,11 +620,7 @@ fn rbf_orphan_arch_txs() {
         "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
         arch_test_sdk::constants::get_explorer_tx_url(
             BITCOIN_NETWORK,
-            &processed_transactions[0]
-                .bitcoin_txid
-                .clone()
-                .unwrap()
-                .to_string()
+            &processed_transactions[0].bitcoin_txid.unwrap().to_string()
         )
     );
 
@@ -730,7 +716,6 @@ fn rbf_orphan_arch_txs() {
             BITCOIN_NETWORK,
             &second_processed_transactions[0]
                 .bitcoin_txid
-                .clone()
                 .unwrap()
                 .to_string()
         )
@@ -858,11 +843,7 @@ fn rbf_reorg() {
         "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
         arch_test_sdk::constants::get_explorer_tx_url(
             BITCOIN_NETWORK,
-            &processed_transactions[0]
-                .bitcoin_txid
-                .clone()
-                .unwrap()
-                .to_string()
+            &processed_transactions[0].bitcoin_txid.unwrap().to_string()
         )
     );
 
@@ -883,14 +864,8 @@ fn rbf_reorg() {
     let rpc_node2 = Client::new(BITCOIN_NODE2_ADDRESS, userpass.clone())
         .expect("rpc shouldn not fail to be initiated");
 
-    let first_txid = Txid::from_str(
-        &processed_transactions[0]
-            .bitcoin_txid
-            .clone()
-            .unwrap()
-            .to_string(),
-    )
-    .unwrap();
+    let first_txid =
+        Txid::from_str(&processed_transactions[0].bitcoin_txid.unwrap().to_string()).unwrap();
 
     let first_tx = rpc_node1.get_raw_transaction(&first_txid, None).unwrap();
     rpc_node2.send_raw_transaction(&first_tx).unwrap();
@@ -941,7 +916,6 @@ fn rbf_reorg() {
             BITCOIN_NETWORK,
             &second_processed_transactions[0]
                 .bitcoin_txid
-                .clone()
                 .unwrap()
                 .to_string()
         )

@@ -38,7 +38,7 @@ mod whitelist_tests {
         let instruction = add_peer_to_whitelist(
             &shared_validator_pubkey,
             &signing_keypair_arch_pubkey,
-            validator_pubkey.clone(),
+            *validator_pubkey,
         );
 
         let tx = build_and_sign_transaction(
@@ -47,7 +47,7 @@ mod whitelist_tests {
                 Some(signing_keypair_arch_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![signing_keypair.clone()],
+            vec![*signing_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");
@@ -58,8 +58,7 @@ mod whitelist_tests {
         let account_info = read_account_info(shared_validator_pubkey);
 
         let shared_validator_state =
-            bincode::deserialize::<SharedValidatorState>(&mut account_info.data.as_slice())
-                .unwrap();
+            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         println!(
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"
@@ -93,7 +92,7 @@ mod whitelist_tests {
         let instruction = remove_peer_from_whitelist(
             &shared_validator_pubkey,
             &signing_keypair_arch_pubkey,
-            validator_pubkey.clone(),
+            *validator_pubkey,
         );
 
         let tx = build_and_sign_transaction(
@@ -102,7 +101,7 @@ mod whitelist_tests {
                 Some(signing_keypair_arch_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![signing_keypair.clone()],
+            vec![*signing_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");
@@ -113,8 +112,7 @@ mod whitelist_tests {
         let account_info = read_account_info(shared_validator_pubkey);
 
         let shared_validator_state =
-            bincode::deserialize::<SharedValidatorState>(&mut account_info.data.as_slice())
-                .unwrap();
+            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         println!(
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"
@@ -232,7 +230,7 @@ mod whitelist_tests {
         let (resulting_state_2, arch_txid_2) =
             add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
 
-        let rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
 
         let processed_transaction_1 = rpc_client
             .get_processed_transaction(&arch_txid_1)
@@ -277,7 +275,7 @@ mod whitelist_tests {
         let (resulting_shared_account, resulting_tx) =
             add_validator_to_whitelist(&client, &validator_pubkey, &keypair);
 
-        let rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
 
         let processed_transaction = rpc_client
             .get_processed_transaction(&resulting_tx)
@@ -391,7 +389,7 @@ mod whitelist_tests {
         let (resulting_state_2, arch_txid_2) =
             remove_validator_from_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
 
-        let rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
         let processed_transaction_1 = rpc_client
             .get_processed_transaction(&arch_txid_1)
             .unwrap()
@@ -430,7 +428,7 @@ mod whitelist_tests {
         let (resulting_shared_account, resulting_tx) =
             remove_validator_from_whitelist(&client, &validator_pubkey, &keypair);
 
-        let rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
         let processed_transaction = rpc_client
             .get_processed_transaction(&resulting_tx)
             .unwrap()

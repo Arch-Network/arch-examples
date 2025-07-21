@@ -133,7 +133,7 @@ pub mod secp256k1_signature_tests {
         let serialized_message = message.serialize();
         let mut serialized_signature = signature.serialize();
         // Messing up the signature
-        serialized_signature[0] = serialized_signature[0] + 1;
+        serialized_signature[0] += 1;
         let serialized_pubkey_uncompressed = signing_keypair.public_key().serialize_uncompressed();
         let mut serialized_pubkey_compressed = [0u8; 64];
         serialized_pubkey_compressed.copy_from_slice(&serialized_pubkey_uncompressed[1..]);

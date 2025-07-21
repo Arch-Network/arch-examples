@@ -331,8 +331,8 @@ impl Processor {
 
         orderbook.initialized = true;
         orderbook.num_orders = 0;
-        orderbook.first_token_mint = first_token_mint.key.clone();
-        orderbook.second_token_mint = second_token_mint.key.clone();
+        orderbook.first_token_mint = *first_token_mint.key;
+        orderbook.second_token_mint = *second_token_mint.key;
 
         msg!("Orderbook initialized: {:?}", orderbook);
 
@@ -367,7 +367,7 @@ impl Processor {
             owner: *owner.key,
             token1_account: *token1_account.key,
             token2_account: *token2_account.key,
-            side: side.clone(),
+            side,
             price,
             size,
         };

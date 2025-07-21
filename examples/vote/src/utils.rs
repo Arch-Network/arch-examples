@@ -28,13 +28,12 @@ pub(crate) fn get_peer_keypair_from_file(peer_number: u8) -> Keypair {
 
     let secret_key = SecretKey::from_slice(&secret_key_bytes).unwrap();
     let secp = Secp256k1::new();
-    let keypair = Keypair::from_secret_key(&secp, &secret_key);
 
-    keypair
+    Keypair::from_secret_key(&secp, &secret_key)
 }
 
 pub(crate) fn get_bootnode_keypair_from_file() -> Keypair {
-    let path = format!("../../.arch-bootnode-data/localnet/identity-secret");
+    let path = "../../.arch-bootnode-data/localnet/identity-secret".to_string();
     let path_buffer = PathBuf::from(path);
     let path = path_buffer.canonicalize().unwrap();
     let file_content = fs::read(path).unwrap();
@@ -43,9 +42,8 @@ pub(crate) fn get_bootnode_keypair_from_file() -> Keypair {
 
     let secret_key = SecretKey::from_slice(&secret_key_bytes).unwrap();
     let secp = Secp256k1::new();
-    let keypair = Keypair::from_secret_key(&secp, &secret_key);
 
-    keypair
+    Keypair::from_secret_key(&secp, &secret_key)
 }
 
 pub fn try_to_create_and_fund_account(keypair: &Keypair) {
@@ -57,7 +55,7 @@ pub fn try_to_create_and_fund_account(keypair: &Keypair) {
         println!("\x1b[33m\x1b[1mAccount already exists, skipping creation ! \x1b[0m");
     } else {
         println!("Account does not exist, creating it !");
-        create_and_fund_account_with_faucet(&keypair, BITCOIN_NETWORK);
+        create_and_fund_account_with_faucet(keypair, BITCOIN_NETWORK);
         println!("Account created and funded !");
     }
 }

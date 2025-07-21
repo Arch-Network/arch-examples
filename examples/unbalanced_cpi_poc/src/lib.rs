@@ -59,7 +59,7 @@ fn poc_unbalanced_cpi() {
             Some(fee_payer_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![authority_keypair.clone(), account_keypair],
+        vec![authority_keypair, account_keypair],
         BITCOIN_NETWORK,
     )
     .expect("Failed to build and sign transaction");

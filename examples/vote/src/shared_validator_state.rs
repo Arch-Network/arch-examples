@@ -26,7 +26,7 @@ pub(crate) mod shared_validator_state_tests {
         match account_info.data.is_empty() {
             false => {
                 let _shared_validator_account =
-                    bincode::deserialize::<SharedValidatorState>(&mut account_info.data.as_slice())
+                    bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice())
                         .unwrap();
 
                 println!(
@@ -47,7 +47,7 @@ pub(crate) mod shared_validator_state_tests {
                     .serialize();
                 let bootnode_arch_pubkey = Pubkey::from_slice(&bootnode_pubkey);
                 send_transaction_to_initialize_shared_validator_account(
-                    &client,
+                    client,
                     &user_keypair,
                     &user_pubkey,
                     &bootnode_arch_pubkey,
@@ -70,9 +70,9 @@ pub(crate) mod shared_validator_state_tests {
 
         let initialization_instruction = initialize_shared_validator_account(
             &shared_validator_account_pubkey,
-            &bootnode_pubkey,
+            bootnode_pubkey,
             serialized_pubkey_package,
-            &whitelist,
+            whitelist,
         );
 
         let tx = build_and_sign_transaction(
@@ -81,7 +81,7 @@ pub(crate) mod shared_validator_state_tests {
                 Some(*user_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![user_keypair.clone()],
+            vec![*user_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");
@@ -92,13 +92,12 @@ pub(crate) mod shared_validator_state_tests {
 
         let account_info = read_account_info(shared_validator_account_pubkey);
         let shared_validator_account =
-            bincode::deserialize::<SharedValidatorState>(&mut account_info.data.as_slice())
-                .unwrap();
+            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         assert_eq!(
             shared_validator_account,
             SharedValidatorState::new(
-                bootnode_pubkey.clone(),
+                *bootnode_pubkey,
                 serialized_pubkey_package.to_vec(),
                 whitelist.to_vec(),
             )

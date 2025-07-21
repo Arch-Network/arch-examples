@@ -118,7 +118,7 @@ impl OrderbookState {
         let order_capacity = (orderbook_account.data_len() - std::mem::size_of::<OrderbookState>())
             / std::mem::size_of::<Order>();
         if self.num_orders as usize >= order_capacity {
-            orderbook_account.realloc(OrderbookState::size_of(self.num_orders as u32 + 1), true)?;
+            orderbook_account.realloc(OrderbookState::size_of(self.num_orders + 1), true)?;
         }
         self.num_orders += 1;
 
@@ -154,7 +154,7 @@ impl OrderbookState {
         orders.copy_within(index + 1.., index);
         self.num_orders -= 1;
 
-        orderbook_account.realloc(OrderbookState::size_of(self.num_orders as u32), true)?;
+        orderbook_account.realloc(OrderbookState::size_of(self.num_orders), true)?;
 
         Ok(removed_order)
     }

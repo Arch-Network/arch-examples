@@ -14,10 +14,7 @@ mod tests {
         constants::{
             BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH,
         },
-        helper::{
-            create_and_fund_account_with_faucet, deploy_program, read_account_info,
-            send_transactions_and_wait,
-        },
+        helper::{create_and_fund_account_with_faucet, deploy_program, send_transactions_and_wait},
         logging::{init_logging, log_scenario_end, log_scenario_start},
     };
     use serial_test::serial;
@@ -60,7 +57,7 @@ mod tests {
                 Some(authority_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![authority_keypair.clone()],
+            vec![authority_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");
@@ -131,7 +128,7 @@ mod tests {
                 Some(authority_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![authority_keypair.clone()],
+            vec![authority_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");
@@ -206,7 +203,7 @@ mod tests {
                 Some(authority_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![authority_keypair.clone()],
+            vec![authority_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");

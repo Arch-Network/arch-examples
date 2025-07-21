@@ -71,8 +71,8 @@ mod tests {
         let tx = build_and_sign_transaction(
             ArchMessage::new(
                 &vote::instruction::create_account(
-                    &user_pubkey,
-                    &vote_pubkey,
+                    user_pubkey,
+                    vote_pubkey,
                     &VoteInit::new(*node_pubkey, *authority_pubkey, 0),
                     MIN_ACCOUNT_LAMPORTS,
                 ),
@@ -89,8 +89,7 @@ mod tests {
         assert_eq!(processed_txs[0].status, Status::Processed);
 
         let account_info = read_account_info(*vote_pubkey);
-        let vote_account =
-            bincode::deserialize::<VoteState>(&mut account_info.data.as_slice()).unwrap();
+        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(
@@ -150,8 +149,7 @@ mod tests {
         println!("Processed tx: {:?}", processed_txs[0]);
 
         let account_info = read_account_info(vote_pubkey);
-        let vote_account =
-            bincode::deserialize::<VoteState>(&mut account_info.data.as_slice()).unwrap();
+        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(vote_account.authority, new_authority_pubkey);
@@ -207,8 +205,7 @@ mod tests {
         println!("Processed tx: {:?}", processed_txs[0]);
 
         let account_info = read_account_info(vote_pubkey);
-        let vote_account =
-            bincode::deserialize::<VoteState>(&mut account_info.data.as_slice()).unwrap();
+        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(vote_account.commission, 10);
@@ -239,7 +236,7 @@ mod tests {
         match try_read_account_info(node_pubkey) {
             Some(account_info) => {
                 let vote_account =
-                    bincode::deserialize::<VoteState>(&mut account_info.data.as_slice()).unwrap();
+                    bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
 
                 println!("Vote state already initialized ! {:?}", vote_account);
             }

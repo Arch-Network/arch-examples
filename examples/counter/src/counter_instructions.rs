@@ -47,14 +47,14 @@ pub(crate) fn start_new_counter(
                 &account_pubkey,
                 MIN_ACCOUNT_LAMPORTS,
                 0,
-                &program_pubkey,
+                program_pubkey,
                 hex::decode(txid).unwrap().try_into().unwrap(),
                 vout,
             )],
             Some(fee_payer_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![fee_payer_keypair.clone(), account_key_pair],
+        vec![*fee_payer_keypair, account_key_pair],
         BITCOIN_NETWORK,
     )
     .expect("Failed to build and sign transaction");
@@ -89,7 +89,7 @@ pub(crate) fn start_new_counter(
             Some(fee_payer_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![fee_payer_keypair.clone(), account_key_pair],
+        vec![*fee_payer_keypair, account_key_pair],
         BITCOIN_NETWORK,
     )
     .expect("Failed to build and sign transaction");

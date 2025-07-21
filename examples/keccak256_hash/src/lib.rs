@@ -56,7 +56,7 @@ fn test_reference_hash_values() {
 // Standalone unit tests that don't require runtime
 #[cfg(test)]
 mod standalone_tests {
-    use hex;
+
     use sha3::{Digest, Keccak256};
 
     /// Test that our expected hash values are correct using reference implementation

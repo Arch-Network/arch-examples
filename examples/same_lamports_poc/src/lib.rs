@@ -173,14 +173,14 @@ fn create_account(
                 &account_pubkey1,
                 MIN_ACCOUNT_LAMPORTS,
                 0,
-                &program_pubkey,
+                program_pubkey,
                 hex::decode(txid1).unwrap().try_into().unwrap(),
                 vout1,
             )],
             Some(*fee_payer_pubkey),
             client.get_best_block_hash().unwrap(),
         ),
-        vec![authority_keypair.clone(), account_keypair1],
+        vec![authority_keypair, account_keypair1],
         BITCOIN_NETWORK,
     )
     .expect("Failed to build and sign transaction");

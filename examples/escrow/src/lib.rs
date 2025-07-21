@@ -245,7 +245,7 @@ mod tests {
             AccountMeta::new(apl_token::id(), false),
         ];
         let mut data = Vec::with_capacity(36); // 32 bytes for txid + 4 bytes for vout
-        data.extend_from_slice(&txid.as_bytes());
+        data.extend_from_slice(txid.as_bytes());
         data.extend_from_slice(&vout.to_le_bytes());
 
         let create_ata_txid = build_and_sign_transaction(

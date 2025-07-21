@@ -63,7 +63,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -134,7 +134,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -167,7 +167,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -236,7 +236,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -269,7 +269,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -343,7 +343,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -374,7 +374,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -413,7 +413,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -487,7 +487,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -518,7 +518,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
 
         assert_eq!(
@@ -557,7 +557,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
         println!("lamports: {}", account_info.lamports);
 
@@ -588,7 +588,7 @@ mod tests {
 
         let account_info = read_account_info(stake_pubkey);
         let stake_account =
-            bincode::deserialize::<StakeState>(&mut account_info.data.as_slice()).unwrap();
+            bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
         println!("lamports: {}", account_info.lamports);
 

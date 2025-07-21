@@ -43,7 +43,7 @@ mod update_pubkey_package_tests {
                 Some(user_pubkey),
                 client.get_best_block_hash().unwrap(),
             ),
-            vec![user_keypair.clone()],
+            vec![user_keypair],
             BITCOIN_NETWORK,
         )
         .expect("Failed to build and sign transaction");

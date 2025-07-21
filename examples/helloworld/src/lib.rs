@@ -230,7 +230,7 @@ mod tests {
             "Authority pubkey {:?}",
             read_account_info(authority_pubkey).lamports
         );
-        let arch_rpc_client = ArchRpcClient::new(&NODE1_ADDRESS.to_string());
+        let arch_rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
         let txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
         let block_transactions: Vec<arch_sdk::ProcessedTransaction> =
             send_transactions_and_wait(vec![transaction]);
