@@ -249,6 +249,12 @@ fn counter_inc_two_instructions_2nd_fail() {
         authority_keypair,
     );
 
+    let program_info = read_account_info(program_pubkey);
+    println!("program_info: {:?}", program_info.is_executable);
+    println!("program_info: {:?}", program_info.data.len());
+    println!("program_info: {:?}", program_info.utxo);
+    println!("program_info: {:?}", program_info.owner);
+
     let (account_pubkey, account_keypair) =
         start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
@@ -1047,6 +1053,7 @@ fn counter_init_and_two_inc_anchored_fail() {
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
+    println!("processed_transactions: {:?}", processed_transactions);
 
     assert!(matches!(
         processed_transactions[0].status,
@@ -1136,6 +1143,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
     .expect("Failed to build and sign transaction");
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
+    println!("processed_transactions: {:?}", processed_transactions);
 
     //assert!(processed_transactions[0].bitcoin_txid.is_none());
 

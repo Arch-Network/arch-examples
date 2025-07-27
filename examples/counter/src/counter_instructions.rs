@@ -59,7 +59,12 @@ pub(crate) fn start_new_counter(
     )
     .expect("Failed to build and sign transaction");
 
-    let _processed_tx = send_transactions_and_wait(vec![txid]);
+    let processed_tx = send_transactions_and_wait(vec![txid]);
+
+    println!(
+        "processed_tx for creating account : {:?} \n\n",
+        processed_tx
+    );
 
     println!("\x1b[32m Step 2/3 Successful :\x1b[0m Ownership Successfully assigned to program!");
 
@@ -94,7 +99,9 @@ pub(crate) fn start_new_counter(
     )
     .expect("Failed to build and sign transaction");
 
-    let _processed_tx = send_transactions_and_wait(vec![txid]);
+    let processed_tx = send_transactions_and_wait(vec![txid]);
+
+    println!("processed_tx: {:?}", processed_tx);
 
     let account_info = read_account_info(account_pubkey);
 

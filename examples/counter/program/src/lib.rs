@@ -97,7 +97,7 @@ pub fn process_instruction<'a>(
     }
 
     if counter_input.anchoring.is_some() {
-        let (utxo, serialized_tx, anchoring_should_fail) = counter_input.anchoring.unwrap();
+        let (_utxo, serialized_tx, anchoring_should_fail) = counter_input.anchoring.unwrap();
 
         let fees_tx: Transaction = bitcoin::consensus::deserialize(&serialized_tx)
             .map_err(|_e| ProgramError::Custom(504))?;
