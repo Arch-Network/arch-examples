@@ -172,19 +172,7 @@ impl OrderbookState {
             first_ask_index += 1;
         }
 
-        let result = if orders[0].price == orders[first_ask_index].price {
-            if orders[0].size < orders[first_ask_index].size {
-                (
-                    orders[0].size,
-                    orders[0].size * orders[first_ask_index].price,
-                )
-            } else {
-                (
-                    orders[first_ask_index].size,
-                    orders[0].size * orders[first_ask_index].price,
-                )
-            }
-        } else if orders[0].price > orders[first_ask_index].price {
+        let result = if orders[0].price >= orders[first_ask_index].price {
             if orders[0].size < orders[first_ask_index].size {
                 (
                     orders[0].size,
