@@ -101,7 +101,7 @@ mod tests {
                     .unwrap(),
                 }],
                 Some(payer_account_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![payer_account_keypair],
             BITCOIN_NETWORK,

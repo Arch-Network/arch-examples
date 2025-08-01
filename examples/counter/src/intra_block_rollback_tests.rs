@@ -73,7 +73,7 @@ fn test_intra_block_tx_cache() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -84,7 +84,7 @@ fn test_intra_block_tx_cache() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,

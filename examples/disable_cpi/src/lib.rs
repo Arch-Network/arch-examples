@@ -55,7 +55,7 @@ mod tests {
             ArchMessage::new(
                 &[instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
@@ -126,7 +126,7 @@ mod tests {
             ArchMessage::new(
                 &[cpi_instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
@@ -201,7 +201,7 @@ mod tests {
             ArchMessage::new(
                 &[cpi_instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,

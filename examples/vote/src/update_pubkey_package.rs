@@ -41,7 +41,7 @@ mod update_pubkey_package_tests {
             ArchMessage::new(
                 &[update_instruction],
                 Some(user_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,

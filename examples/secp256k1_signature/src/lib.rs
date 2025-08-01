@@ -88,7 +88,7 @@ pub mod secp256k1_signature_tests {
             ArchMessage::new(
                 &[instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
@@ -156,7 +156,7 @@ pub mod secp256k1_signature_tests {
             ArchMessage::new(
                 &[instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,

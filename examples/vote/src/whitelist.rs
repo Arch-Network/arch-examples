@@ -45,7 +45,7 @@ mod whitelist_tests {
             ArchMessage::new(
                 &[instruction],
                 Some(signing_keypair_arch_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*signing_keypair],
             BITCOIN_NETWORK,
@@ -99,7 +99,7 @@ mod whitelist_tests {
             ArchMessage::new(
                 &[instruction],
                 Some(signing_keypair_arch_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*signing_keypair],
             BITCOIN_NETWORK,

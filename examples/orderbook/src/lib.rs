@@ -68,7 +68,7 @@ mod tests {
             ArchMessage::new(
                 &[init_instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
             BITCOIN_NETWORK,
@@ -216,7 +216,7 @@ mod tests {
             ArchMessage::new(
                 &[create_account_instruction, initialize_mint_instruction],
                 Some(authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, token_mint_keypair],
             BITCOIN_NETWORK,
@@ -267,7 +267,7 @@ mod tests {
                     initialize_token_account_instruction,
                 ],
                 Some(owner_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![owner_keypair, token_account_keypair],
             BITCOIN_NETWORK,
@@ -311,7 +311,7 @@ mod tests {
             ArchMessage::new(
                 &[instruction],
                 Some(*owner_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,
@@ -590,7 +590,7 @@ mod tests {
             ArchMessage::new(
                 &[place_order_instruction],
                 Some(*authority_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*authority_keypair],
             BITCOIN_NETWORK,
@@ -847,7 +847,7 @@ mod tests {
             ArchMessage::new(
                 &[cancel_order_instruction],
                 Some(*owner_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*owner_keypair],
             BITCOIN_NETWORK,
@@ -1011,7 +1011,7 @@ mod tests {
             ArchMessage::new(
                 &[match_orders_instruction],
                 Some(owner_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,
@@ -1090,7 +1090,7 @@ mod tests {
             ArchMessage::new(
                 &[instruction],
                 Some(funder_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![funder_keypair],
             BITCOIN_NETWORK,
@@ -1252,7 +1252,7 @@ mod tests {
             ArchMessage::new(
                 &[match_orders_instruction],
                 Some(owner_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![owner_keypair],
             BITCOIN_NETWORK,

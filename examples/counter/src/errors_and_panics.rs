@@ -64,7 +64,7 @@ fn counter_inc_single_instruction_fail() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -128,7 +128,7 @@ fn counter_inc_single_instruction_panic() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -202,7 +202,7 @@ fn counter_inc_two_instructions_1st_fail() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -282,7 +282,7 @@ fn counter_inc_two_instructions_2nd_fail() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -356,7 +356,7 @@ fn counter_inc_two_instructions_1st_panic() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -430,7 +430,7 @@ fn counter_inc_two_instructions_2nd_panic() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -504,7 +504,7 @@ fn counter_inc_two_transactions_1st_fail() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -515,7 +515,7 @@ fn counter_inc_two_transactions_1st_fail() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -597,7 +597,7 @@ fn counter_inc_two_transactions_2nd_fail() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -608,7 +608,7 @@ fn counter_inc_two_transactions_2nd_fail() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -690,7 +690,7 @@ fn counter_inc_two_transactions_1st_panic() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -700,7 +700,7 @@ fn counter_inc_two_transactions_1st_panic() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -781,7 +781,7 @@ fn counter_inc_two_transactions_2nd_panic() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -792,7 +792,7 @@ fn counter_inc_two_transactions_2nd_panic() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -866,7 +866,7 @@ fn counter_init_and_inc_anchored_fail() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -953,7 +953,7 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -1043,7 +1043,7 @@ fn counter_init_and_two_inc_anchored_fail() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -1135,7 +1135,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_instruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -1247,7 +1247,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -1258,7 +1258,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
@@ -1399,7 +1399,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -1410,7 +1410,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
         ArchMessage::new(
             &[second_increase_instruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,

@@ -121,7 +121,7 @@ fn counter_init_and_inc_test() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -190,7 +190,7 @@ fn counter_init_and_inc_transaction_test() {
         ArchMessage::new(
             &[first_increase_istruction, second_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -249,7 +249,7 @@ fn counter_init_and_inc_block_test() {
         ArchMessage::new(
             &[first_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -270,7 +270,7 @@ fn counter_init_and_inc_block_test() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -342,7 +342,7 @@ fn counter_init_and_inc_anchored() {
         ArchMessage::new(
             &[increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
         BITCOIN_NETWORK,
@@ -408,7 +408,7 @@ fn counter_init_and_inc_anchored() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, authority_keypair],
         BITCOIN_NETWORK,

@@ -184,7 +184,7 @@ mod tests {
                 ),
             ],
             Some(*payer),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         let signers = vec![payer_keypair, mint_keypair];
@@ -205,7 +205,7 @@ mod tests {
             )
             .unwrap()],
             Some(*payer),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         let signers = vec![payer_keypair, mint_keypair];
@@ -256,7 +256,7 @@ mod tests {
                     data,
                 }],
                 Some(funder_address),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![funder_address_keypair],
             BITCOIN_NETWORK,
@@ -327,7 +327,7 @@ mod tests {
                     data: serialized_maker_offer_input,
                 }],
                 Some(maker_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![maker_keypair],
             BITCOIN_NETWORK,
@@ -384,7 +384,7 @@ mod tests {
                     data: serialized_take_offer_input,
                 }],
                 Some(taker_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![taker_keypair],
             BITCOIN_NETWORK,
@@ -415,7 +415,7 @@ mod tests {
                 )
                 .unwrap()],
                 Some(user_pubkey),
-                client.get_best_block_hash().unwrap(),
+                client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair],
             BITCOIN_NETWORK,

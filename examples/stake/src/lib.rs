@@ -133,7 +133,7 @@ mod stake_tests {
             stake_account,
             mint_pubkey,
             program_pubkey,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         // create token accounts
@@ -142,14 +142,14 @@ mod stake_tests {
             user_pubkey,
             user_keypair,
             mint_pubkey,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
         let stake_token_account = create_ata(
             user_pubkey,
             stake_account,
             user_keypair,
             mint_pubkey,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         // mint tokens
@@ -160,7 +160,7 @@ mod stake_tests {
             user_ata,
             user_pubkey,
             user_keypair,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         // stake ix
@@ -172,7 +172,7 @@ mod stake_tests {
             stake_token_account,
             mint_pubkey,
             program_pubkey,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
 
         // unstake ix
@@ -184,7 +184,7 @@ mod stake_tests {
             user_ata,
             stake_token_account,
             program_pubkey,
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         );
     }
 

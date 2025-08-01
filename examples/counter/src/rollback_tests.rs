@@ -204,7 +204,7 @@ fn single_utxo_rbf_two_accounts() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -257,7 +257,7 @@ fn single_utxo_rbf_two_accounts() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
@@ -381,7 +381,7 @@ fn single_utxo_rbf_three_accounts() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -433,7 +433,7 @@ fn single_utxo_rbf_three_accounts() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
@@ -468,7 +468,7 @@ fn single_utxo_rbf_three_accounts() {
         ArchMessage::new(
             &[third_increase_istruction],
             Some(third_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![third_account_keypair, third_authority_keypair],
         BITCOIN_NETWORK,
@@ -595,7 +595,7 @@ fn rbf_orphan_arch_txs() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -644,7 +644,7 @@ fn rbf_orphan_arch_txs() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -689,7 +689,7 @@ fn rbf_orphan_arch_txs() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
@@ -815,7 +815,7 @@ fn rbf_reorg() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,
@@ -891,7 +891,7 @@ fn rbf_reorg() {
         ArchMessage::new(
             &[second_increase_istruction],
             Some(second_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, second_authority_keypair],
         BITCOIN_NETWORK,
@@ -970,7 +970,7 @@ fn rbf_reorg() {
         ArchMessage::new(
             &[increase_istruction],
             Some(first_authority_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![first_account_keypair, first_authority_keypair],
         BITCOIN_NETWORK,

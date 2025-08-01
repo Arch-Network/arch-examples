@@ -74,7 +74,7 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
         ArchMessage::new(
             &[instruction],
             Some(payer_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, payer_keypair],
         BITCOIN_NETWORK,

@@ -57,7 +57,7 @@ fn poc_unbalanced_cpi() {
                 vout,
             )],
             Some(fee_payer_pubkey),
-            client.get_best_block_hash().unwrap(),
+            client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![authority_keypair, account_keypair],
         BITCOIN_NETWORK,
@@ -96,7 +96,7 @@ fn poc_unbalanced_cpi() {
     let message = ArchMessage::new(
         &[instruction],
         Some(authority_pubkey),
-        client.get_best_block_hash().unwrap(),
+        client.get_best_finalized_block_hash().unwrap(),
     );
 
     dbg!("MESSAGE:", &message);
