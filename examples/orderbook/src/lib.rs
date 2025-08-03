@@ -1,5 +1,4 @@
-#[cfg(test)]
-mod tests {
+pub mod tests {
     use apl_token::state::Mint;
     use arch_program::{
         account::{AccountMeta, MIN_ACCOUNT_LAMPORTS},
@@ -23,7 +22,6 @@ mod tests {
         logging::init_logging,
     };
     use bitcoin::key::Keypair;
-    use serial_test::serial;
     use std::sync::{Arc, Condvar, Mutex};
 
     use orderbook_program::{
@@ -31,7 +29,7 @@ mod tests {
         state::{Order, OrderbookState, Side},
     };
 
-    pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/orderbook_program.so";
+    pub const ELF_PATH: &str = "./program/orderbook_program.so";
 
     fn initialize_orderbook(
         client: &ArchRpcClient,
@@ -153,10 +151,7 @@ mod tests {
         }
     }
 
-    #[ignore]
-    #[test]
-    #[serial]
-    fn test_initialize_orderbook() {
+    pub fn test_initialize_orderbook() {
         init_logging();
 
         let client = ArchRpcClient::new(NODE1_ADDRESS);
@@ -325,10 +320,7 @@ mod tests {
         }
     }
 
-    #[ignore]
-    #[test]
-    #[serial]
-    fn test_place_order() {
+    pub fn test_place_order() {
         init_logging();
 
         let client = ArchRpcClient::new(NODE1_ADDRESS);
@@ -609,10 +601,7 @@ mod tests {
         ));
     }
 
-    #[ignore]
-    #[test]
-    #[serial]
-    fn test_cancel_order() {
+    pub fn test_cancel_order() {
         init_logging();
 
         let client = ArchRpcClient::new(NODE1_ADDRESS);
@@ -866,10 +855,7 @@ mod tests {
         ));
     }
 
-    #[ignore]
-    #[test]
-    #[serial]
-    fn test_match_orders() {
+    pub fn test_match_orders() {
         let client = ArchRpcClient::new(NODE1_ADDRESS);
 
         let (owner_keypair, owner_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
