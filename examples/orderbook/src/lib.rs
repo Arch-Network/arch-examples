@@ -29,7 +29,7 @@ pub mod tests {
         state::{Order, OrderbookState, Side},
     };
 
-    pub const ELF_PATH: &str = "./program/orderbook_program.so";
+    pub const ELF_PATH: &str = "../bin/orderbook_program.so";
 
     fn initialize_orderbook(
         client: &ArchRpcClient,
