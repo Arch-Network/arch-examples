@@ -97,6 +97,7 @@ pub mod tests {
     }
 
     // #[test]
+    #[allow(dead_code)]
     fn mint_tokens_test() {
         let max_outstanding = 100;
         let outstanding = Arc::new((Mutex::new(0_u64), Condvar::new()));
@@ -1041,6 +1042,7 @@ pub mod tests {
         assert_eq!(token_account.amount, 10);
     }
 
+    #[allow(dead_code)]
     fn create_associated_token_account(
         client: &ArchRpcClient,
         owner_pubkey: Pubkey,
