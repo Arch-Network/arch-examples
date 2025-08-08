@@ -875,12 +875,13 @@ fn counter_init_and_inc_anchored_fail() {
 
     let processed_transactions = send_transactions_and_wait(vec![transaction]);
 
-    //assert!(processed_transactions[0].bitcoin_txid.is_none());
+    // assert!(processed_transactions[0].bitcoin_txid.is_none());
 
     // assert!(matches!(
     //     processed_transactions[0].status,
     //     Status::Failed(_)
     // ));
+    println!("processed_transactions[0] {:?}", processed_transactions[0]);
 
     assert!(matches!(
         processed_transactions[0].rollback_status,
