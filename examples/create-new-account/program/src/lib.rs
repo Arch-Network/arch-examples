@@ -100,7 +100,7 @@ pub fn process_instruction<'a>(
     tx.input.push(fees_tx.input[0].clone());
 
     // Create the transaction signing request
-    let inputs = [InputToSign {
+    let inputs = [InputToSign::Sign {
         index: 0,
         signer: factory_state_account.key.clone(),
     }];

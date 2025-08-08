@@ -130,7 +130,7 @@ pub fn process_instruction<'a>(
                 })
             }
         }
-        let inputs = [InputToSign {
+        let inputs = [InputToSign::Sign {
             index,
             signer: account.key.clone(),
         }];
