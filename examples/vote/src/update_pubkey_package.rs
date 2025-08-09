@@ -32,7 +32,7 @@ mod update_pubkey_package_tests {
 
         let update_instruction = update_pubkey_package(
             &arch_program::pubkey::Pubkey(SHARED_VALIDATOR_DATA_ACCOUNT_ID),
-            &vec![0, 0, 1],
+            &[0, 0, 1],
         );
 
         let client = ArchRpcClient::new(NODE1_ADDRESS);
