@@ -7,15 +7,8 @@ mod tests {
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
-        Status,
-    };
-    use arch_test_sdk::constants::NODE1_ADDRESS;
-    use arch_test_sdk::helper::{create_and_fund_account_with_faucet, send_transactions_and_wait};
-    use arch_test_sdk::{
-        constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
-        helper::{deploy_program, prepare_fees, read_account_info, send_utxo},
-        logging::print_title,
+        build_and_sign_transaction, generate_new_keypair, prepare_fees, with_secret_key_file,
+        ArchRpcClient, BitcoinHelper, Config, ProgramDeployer, Status,
     };
     use borsh::{BorshDeserialize, BorshSerialize};
     use serial_test::serial;
@@ -33,20 +26,35 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_hello_world() {
+        let test_config = Config::localnet();
+        let node1_address = &test_config.arch_node_url;
+        let bitcoin_network = test_config.network;
+
+        let client = ArchRpcClient::new(node1_address);
+
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
 
-        let (authority_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+        let (authority_keypair, _, _) = generate_new_keypair(bitcoin_network);
 
-        let program_pubkey = deploy_program(
-            "Hello World Program".to_string(),
-            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
-            program_keypair,
-            authority_keypair,
-        );
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .unwrap();
 
-        let program_account_info = read_account_info(program_pubkey);
+        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Hello World Program".to_string(),
+                program_keypair,
+                authority_keypair,
+                &"program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            )
+            .unwrap();
+
+        let program_account_info = client
+            .read_account_info(program_pubkey)
+            .expect("read account info should not fail");
 
         let elf = fs::read("program/target/sbpf-solana-solana/release/helloworldprogram.so")
             .expect("elf path should be available");
@@ -60,37 +68,50 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_call() {
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let test_config = Config::localnet();
+        let node1_address = &test_config.arch_node_url;
+        let bitcoin_network = test_config.network;
+
+        let client = ArchRpcClient::new(node1_address);
 
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
 
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .unwrap();
 
-        let program_pubkey = deploy_program(
-            "Hello World Program".to_string(),
-            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
-            program_keypair,
-            authority_keypair,
-        );
+        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
 
-        print_title("ACCOUNT CREATION & PROGRAM CALL", 5);
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Hello World Program".to_string(),
+                program_keypair,
+                authority_keypair,
+                &"program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            )
+            .unwrap();
+
+        // print_title("ACCOUNT CREATION & PROGRAM CALL", 5);
+        println!("ACCOUNT CREATION & PROGRAM CALL ");
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
         let (first_account_keypair, first_account_pubkey, address) =
-            generate_new_keypair(BITCOIN_NETWORK);
-        // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+            generate_new_keypair(bitcoin_network);
 
         println!(
             "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-            arch_test_sdk::constants::get_explorer_address_url(BITCOIN_NETWORK, &address.to_string())
+            arch_sdk::get_explorer_address_url(bitcoin_network, &address.to_string())
         );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let (txid, vout) = send_utxo(first_account_pubkey);
+        let bitcoin_config = Config::localnet();
+
+        let bitcoin_helper = BitcoinHelper::new(&bitcoin_config);
+        let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
             ArchMessage::new(
@@ -107,11 +128,12 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let block_transactions = send_transactions_and_wait(vec![transaction]);
+        let txids = client.send_transactions(vec![transaction]).unwrap();
+        let block_transactions = client.wait_for_processed_transactions(txids).unwrap();
 
         let processed_tx = block_transactions[0].clone();
 
@@ -139,17 +161,18 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let block_transactions = send_transactions_and_wait(vec![transaction]);
+        let txids = client.send_transactions(vec![transaction]).unwrap();
+        let block_transactions = client.wait_for_processed_transactions(txids).unwrap();
 
         let processed_tx = block_transactions[0].clone();
 
         assert!(matches!(processed_tx.status, Status::Processed));
 
-        let account_info = read_account_info(first_account_pubkey);
+        let account_info = client.read_account_info(first_account_pubkey).unwrap();
 
         assert_eq!(
             String::from_utf8(account_info.data.clone()).unwrap(),
@@ -165,12 +188,9 @@ mod tests {
             "\x1b[32m Step 3/3 Successful :\x1b[0m Hello World program call was successful ! ",
         );
 
-        print_title(
-            &format!(
-                "Hello World example Finished Successfully! Final Account data : {}",
-                String::from_utf8(account_info.data.clone()).unwrap()
-            ),
-            5,
+        println!(
+            "Hello World example Finished Successfully! Final Account data : {}",
+            String::from_utf8(account_info.data.clone()).unwrap()
         );
     }
 
@@ -178,39 +198,53 @@ mod tests {
     #[serial]
     #[test]
     fn double_spent_shouldnt_be_possible() {
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let test_config = Config::localnet();
+        let node1_address = &test_config.arch_node_url;
+        let bitcoin_network = test_config.network;
+
+        let client = ArchRpcClient::new(node1_address);
 
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
 
-        // let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
         let (authority_keypair, authority_pubkey) =
             with_secret_key_file(".caller.json").expect("getting caller info should not fail");
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
-        let program_pubkey = deploy_program(
-            "Hello World Program".to_string(),
-            "program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
-            program_keypair,
-            authority_keypair,
-        );
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .unwrap();
 
-        print_title("ACCOUNT CREATION & PROGRAM CALL", 5);
+        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Hello World Program".to_string(),
+                program_keypair,
+                authority_keypair,
+                &"program/target/sbpf-solana-solana/release/helloworldprogram.so".to_string(),
+            )
+            .unwrap();
+
+        println!("ACCOUNT CREATION & PROGRAM CALL");
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
         let (first_account_keypair, first_account_pubkey, address) =
-            generate_new_keypair(BITCOIN_NETWORK);
+            generate_new_keypair(bitcoin_network);
         // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
         println!(
             "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-            arch_test_sdk::constants::get_explorer_address_url(BITCOIN_NETWORK, &address.to_string())
+            arch_sdk::get_explorer_address_url(bitcoin_network, &address.to_string())
         );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let (txid, vout) = send_utxo(first_account_pubkey);
+        let bitcoin_config = Config::localnet();
+
+        let bitcoin_helper = BitcoinHelper::new(&bitcoin_config);
+
+        let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
             ArchMessage::new(
@@ -223,26 +257,31 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
         println!(
             "Authority pubkey {:?}",
-            read_account_info(authority_pubkey).lamports
+            client.read_account_info(authority_pubkey).unwrap().lamports
         );
-        let arch_rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
+        let arch_rpc_client = ArchRpcClient::new(node1_address);
         let txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
-        let block_transactions: Vec<arch_sdk::ProcessedTransaction> =
-            send_transactions_and_wait(vec![transaction]);
+
+        let txids = client.send_transactions(vec![transaction]).unwrap();
+        let block_transactions = client.wait_for_processed_transactions(txids).unwrap();
+
         println!(
             "Authority pubkey {:?}",
-            read_account_info(authority_pubkey).lamports
+            client.read_account_info(authority_pubkey).unwrap().lamports
         );
         println!(
             "first_account_pubkey {:?}",
-            read_account_info(first_account_pubkey).lamports
+            client
+                .read_account_info(first_account_pubkey)
+                .unwrap()
+                .lamports
         );
-        let first_account_info = read_account_info(first_account_pubkey);
+        let first_account_info = client.read_account_info(first_account_pubkey).unwrap();
         // txn not duplicated
         assert_eq!(first_account_info.lamports, 100000);
     }

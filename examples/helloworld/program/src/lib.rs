@@ -79,7 +79,7 @@ pub fn process_instruction<'a>(
     add_state_transition(&mut tx, account);
     tx.input.push(fees_tx.input[0].clone());
 
-    let inputs = [InputToSign {
+    let inputs = [InputToSign::Sign {
         index: 0,
         signer: account.key.clone(),
     }];
