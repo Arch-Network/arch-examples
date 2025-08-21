@@ -13,15 +13,7 @@ mod stake_tests {
     };
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
-        Status,
-    };
-    use arch_test_sdk::{
-        constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-        helper::{
-            create_and_fund_account_with_faucet, deploy_program, read_account_info,
-            send_transactions_and_wait, send_utxo,
-        },
-        logging::{init_logging, log_scenario_start},
+        BitcoinHelper, Config, ProgramDeployer, Status,
     };
     use bitcoin::key::Keypair;
     use borsh::{BorshDeserialize, BorshSerialize};
@@ -80,38 +72,44 @@ mod stake_tests {
     #[ignore]
     #[test]
     pub fn stake_test() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Program Deployment & Stake Program Initialization",
-            "Deploying the Stake program",
-        );
+        println!("Program Deployment & Stake Program Initialization",);
+        println!("Deploying the Stake program",);
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
 
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
 
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
 
-        let program_pubkey = deploy_program(
-            "Stake Program".to_string(),
-            ELF_PATH.to_string(),
-            program_keypair,
-            user_keypair,
-        );
+        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Stake Program".to_string(),
+                program_keypair,
+                user_keypair,
+                &ELF_PATH.to_string(),
+            )
+            .unwrap();
 
         // generate mint keypair and transfer utxos to it
-        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (mint_txid, mint_vout) = send_utxo(mint_pubkey);
+        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let helper = BitcoinHelper::new(&test_config);
+        let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
 
         // find stake account and transfer utxos to it
         let stake_account =
             find_stake_account_address(&user_pubkey, &mint_pubkey, &program_pubkey).0;
-        let (stake_txid, stake_vout) = send_utxo(stake_account);
+        let (stake_txid, stake_vout) = helper.send_utxo(stake_account).unwrap();
 
         // create utxo meta for mint and stake account
         let mint_utxo = UtxoMeta::from(
@@ -125,6 +123,8 @@ mod stake_tests {
 
         // initialize ix
         initialize(
+            &client,
+            bitcoin_network,
             mint_utxo,
             stake_utxo,
             user_pubkey,
@@ -138,6 +138,9 @@ mod stake_tests {
 
         // create token accounts
         let user_ata = create_ata(
+            &client,
+            &helper,
+            bitcoin_network,
             user_pubkey,
             user_pubkey,
             user_keypair,
@@ -145,6 +148,9 @@ mod stake_tests {
             client.get_best_finalized_block_hash().unwrap(),
         );
         let stake_token_account = create_ata(
+            &client,
+            &helper,
+            bitcoin_network,
             user_pubkey,
             stake_account,
             user_keypair,
@@ -155,6 +161,8 @@ mod stake_tests {
         // mint tokens
         let mint_amount: u64 = 100;
         mint_to(
+            &client,
+            bitcoin_network,
             mint_amount,
             mint_pubkey,
             user_ata,
@@ -165,6 +173,8 @@ mod stake_tests {
 
         // stake ix
         stake(
+            &client,
+            bitcoin_network,
             user_pubkey,
             user_keypair,
             user_ata,
@@ -177,6 +187,8 @@ mod stake_tests {
 
         // unstake ix
         unstake(
+            &client,
+            bitcoin_network,
             user_pubkey,
             user_keypair,
             stake_account,
@@ -189,6 +201,9 @@ mod stake_tests {
     }
 
     pub fn create_ata(
+        client: &ArchRpcClient,
+        bitcoin_helper: &BitcoinHelper,
+        bitcoin_network: bitcoin::Network,
         funder_address: Pubkey,
         wallet_address: Pubkey,
         funder_address_keypair: Keypair,
@@ -203,7 +218,9 @@ mod stake_tests {
             )
             .0;
 
-        let (txid, vout) = send_utxo(associated_account_address);
+        let (txid, vout) = bitcoin_helper
+            .send_utxo(associated_account_address)
+            .unwrap();
 
         let accounts: Vec<AccountMeta> = vec![
             AccountMeta::new(funder_address, true),
@@ -228,17 +245,21 @@ mod stake_tests {
                 recent_blockhash,
             ),
             vec![funder_address_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![create_ata_tx]);
-        assert!(processed_tx[0].status == Status::Processed);
+        let txid = client.send_transaction(create_ata_tx).unwrap();
+        let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+
+        assert!(processed_tx.status == Status::Processed);
 
         associated_account_address
     }
 
     pub fn mint_to(
+        client: &ArchRpcClient,
+        bitcoin_network: bitcoin::Network,
         mint_amount: u64,
         mint_pubkey: Pubkey,
         user_ata: Pubkey,
@@ -261,13 +282,14 @@ mod stake_tests {
                 recent_blockhash,
             ),
             vec![user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
-        let processed_tx = send_transactions_and_wait(vec![mint_to_tx]);
-        assert!(processed_tx[0].status == Status::Processed);
+        let txid = client.send_transaction(mint_to_tx).unwrap();
+        let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+        assert!(processed_tx.status == Status::Processed);
 
-        let user_ata_info = read_account_info(user_ata);
+        let user_ata_info = client.read_account_info(user_ata).unwrap();
         assert_eq!(
             apl_token::state::Account::unpack(&user_ata_info.data)
                 .unwrap()
@@ -277,6 +299,8 @@ mod stake_tests {
     }
 
     pub fn initialize(
+        client: &ArchRpcClient,
+        bitcoin_network: bitcoin::Network,
         mint_utxo: UtxoMeta,
         stake_utxo: UtxoMeta,
         user_pubkey: Pubkey,
@@ -311,18 +335,21 @@ mod stake_tests {
                 recent_blockhash,
             ),
             vec![user_keypair, mint_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
-        let processed_tx = send_transactions_and_wait(vec![initialize_stake_tx]);
-        assert!(processed_tx[0].status == Status::Processed);
+        let txid = client.send_transaction(initialize_stake_tx).unwrap();
+        let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+        assert!(processed_tx.status == Status::Processed);
 
         // check changes after initialize stake
-        let stake_account_info = read_account_info(stake_account);
+        let stake_account_info = client.read_account_info(stake_account).unwrap();
         assert_eq!(stake_account_info.owner, program_pubkey);
     }
 
     pub fn stake(
+        client: &ArchRpcClient,
+        bitcoin_network: bitcoin::Network,
         user_pubkey: Pubkey,
         user_keypair: Keypair,
         user_ata: Pubkey,
@@ -358,22 +385,24 @@ mod stake_tests {
                 recent_blockhash,
             ),
             vec![user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![stake_tx]);
-        assert!(processed_tx[0].status == Status::Processed);
+        let txid = client.send_transaction(stake_tx).unwrap();
+
+        let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+        assert!(processed_tx.status == Status::Processed);
 
         //check that staked amount was updated
-        let stake_info = read_account_info(stake_account);
+        let stake_info = client.read_account_info(stake_account).unwrap();
         let staked_amount = StakeAccount::try_from_slice(&stake_info.data)
             .unwrap()
             .staked_amount;
         assert_eq!(stake_amount, staked_amount);
 
         // user ata balance should be 0
-        let user_ata_info = read_account_info(user_ata);
+        let user_ata_info = client.read_account_info(user_ata).unwrap();
         let user_ata_balance = apl_token::state::Account::unpack(&user_ata_info.data)
             .unwrap()
             .amount;
@@ -381,6 +410,8 @@ mod stake_tests {
     }
 
     pub fn unstake(
+        client: &ArchRpcClient,
+        bitcoin_network: bitcoin::Network,
         user_pubkey: Pubkey,
         user_keypair: Keypair,
         stake_account: Pubkey,
@@ -416,22 +447,25 @@ mod stake_tests {
                 recent_blockhash,
             ),
             vec![user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_tx = send_transactions_and_wait(vec![unstake_tx]);
-        assert!(processed_tx[0].status == Status::Processed);
+        let txid = client.send_transaction(unstake_tx).unwrap();
+
+        let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+
+        assert!(processed_tx.status == Status::Processed);
 
         //check that staked amount was updated
-        let stake_info = read_account_info(stake_account);
+        let stake_info = client.read_account_info(stake_account).unwrap();
         let staked_amount = StakeAccount::try_from_slice(&stake_info.data)
             .unwrap()
             .staked_amount;
         assert_eq!(0, staked_amount);
 
         // user ata balance should be 0
-        let user_ata_info = read_account_info(user_ata);
+        let user_ata_info = client.read_account_info(user_ata).unwrap();
         let user_ata_balance = apl_token::state::Account::unpack(&user_ata_info.data)
             .unwrap()
             .amount;

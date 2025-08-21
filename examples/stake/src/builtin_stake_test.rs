@@ -11,34 +11,28 @@ mod tests {
         system_instruction,
         vote::{program::VOTE_PROGRAM_ID, state::VoteState},
     };
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient};
-    use arch_test_sdk::{
-        constants::{BITCOIN_NETWORK, NODE1_ADDRESS},
-        helper::{
-            create_and_fund_account_with_faucet, read_account_info, send_transactions_and_wait,
-        },
-        logging::{init_logging, log_scenario_end, log_scenario_start},
-    };
+    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config};
     use serial_test::serial;
 
     #[ignore]
     #[serial]
     #[test]
     fn test_stake_initialize() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Stake Account Initialization",
-            "Happy Path Scenario : creating and initializing the stake account",
-        );
+        println!("Stake Account Initialization",);
+        println!("Happy Path Scenario : creating and initializing the stake account",);
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (_, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
 
         let tx = build_and_sign_transaction(
             ArchMessage::new(
@@ -52,16 +46,18 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let block_transactions = send_transactions_and_wait(vec![tx]);
-        let processed_tx = block_transactions[0].clone();
+        let txid = client.send_transaction(tx).unwrap();
+
+        let block_transactions = client.wait_for_processed_transaction(&txid).unwrap();
+        let processed_tx = block_transactions.clone();
 
         println!("Processed tx: {:?}", processed_tx);
 
-        let account_info = read_account_info(stake_pubkey);
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -70,30 +66,31 @@ mod tests {
             stake_account,
             StakeState::Initialized(Authorized::auto(&authority_pubkey))
         );
-
-        log_scenario_end(1, "");
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_stake_authorize() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Stake Account Authorization",
+        println!("Stake Account Authorization",);
+        println!(
             "Happy Path Scenario : creating and initializing the stake account then authorizing the stake account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, new_stake_authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, new_withdraw_authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (_, new_stake_authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (_, new_withdraw_authority_pubkey, _) = generate_new_keypair(bitcoin_network);
 
         let tx1 = build_and_sign_transaction(
             ArchMessage::new(
@@ -107,7 +104,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -123,16 +120,18 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx1, tx2]);
+        let txids = client.send_transactions(vec![tx1, tx2]).unwrap();
+
+        let processed_txs = client.wait_for_processed_transactions(txids).unwrap();
 
         println!("Processed tx: {:?}", processed_txs[0]);
         println!("Processed tx: {:?}", processed_txs[1]);
 
-        let account_info = read_account_info(stake_pubkey);
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -157,15 +156,16 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        println!("Processed tx: {:?}", processed_txs);
 
-        let account_info = read_account_info(stake_pubkey);
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -177,32 +177,35 @@ mod tests {
                 withdrawer: new_withdraw_authority_pubkey,
             })
         );
-
-        log_scenario_end(1, "");
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_stake_delegate() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Stake Account Delegate",
+        println!("Stake Account Delegate",);
+        println!(
             "Happy Path Scenario : creating and initializing the stake account then delegating the stake account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&stake_keypair, BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .unwrap();
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
 
-        let stake_account = read_account_info(stake_pubkey);
+        let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
 
         let tx = build_and_sign_transaction(
@@ -226,15 +229,17 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("Processed tx: {:?}", processed_txs);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -255,19 +260,19 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
-            println!("{:?}", log);
-        }
+        println!("Processed tx: {:?}", processed_txs);
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("{:?}", processed_txs.logs);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -284,32 +289,35 @@ mod tests {
                 },
             )
         );
-
-        log_scenario_end(1, "");
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_stake_deactivate() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Stake Account Deactivate",
+        println!("Stake Account Deactivate",);
+        println!(
             "Happy Path Scenario : creating and initializing the stake account, delegating the stake account, then deactivating the stake account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&stake_keypair, BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .unwrap();
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
 
-        let stake_account = read_account_info(stake_pubkey);
+        let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
 
         let tx = build_and_sign_transaction(
@@ -333,15 +341,17 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("Processed tx: {:?}", processed_txs);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -362,17 +372,19 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
+
+        for log in processed_txs.logs.iter() {
             println!("{:?}", log);
         }
 
-        let account_info = read_account_info(stake_pubkey);
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -400,18 +412,17 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
-            println!("{:?}", log);
-        }
-        println!("{:?}", processed_txs[0].status);
+        println!("{:?}", processed_txs.logs);
+        println!("{:?}", processed_txs.status);
 
-        let account_info = read_account_info(stake_pubkey);
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -428,32 +439,35 @@ mod tests {
                 },
             )
         );
-
-        log_scenario_end(1, "");
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_stake_withdraw() {
-        init_logging();
+        let test_config = Config::localnet();
+        let bitcoin_network = test_config.network;
+        let node1_address = &test_config.arch_node_url;
 
-        log_scenario_start(
-            1,
-            "Stake Account Withdraw",
+        println!("Stake Account Withdraw",);
+        println!(
             "Happy Path Scenario : creating and initializing the stake account, delegating the stake account, then withdrawing the stake account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(node1_address);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&stake_keypair, BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .unwrap();
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        client
+            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .unwrap();
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
 
-        let stake_account = read_account_info(stake_pubkey);
+        let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
 
         let tx = build_and_sign_transaction(
@@ -477,15 +491,17 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("Processed tx: {:?}", processed_txs);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -506,17 +522,17 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            BITCOIN_NETWORK,
-        );
+            bitcoin_network,
+        )
+        .unwrap();
 
-        let processed_txs =
-            send_transactions_and_wait(vec![tx.expect("Failed to build and sign transaction")]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
-            println!("{:?}", log);
-        }
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("{:?}", processed_txs.logs);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -544,18 +560,19 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
-            println!("{:?}", log);
-        }
-        println!("{:?}", processed_txs[0].status);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("{:?}", processed_txs.logs);
+
+        println!("{:?}", processed_txs.status);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
@@ -575,23 +592,21 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            BITCOIN_NETWORK,
+            bitcoin_network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        for log in processed_txs[0].logs.iter() {
-            println!("{:?}", log);
-        }
-        println!("{:?}", processed_txs[0].status);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(stake_pubkey);
+        println!("{:?}", processed_txs.logs);
+        println!("{:?}", processed_txs.status);
+
+        let account_info = client.read_account_info(stake_pubkey).unwrap();
         let stake_account =
             bincode::deserialize::<StakeState>(account_info.data.as_slice()).unwrap();
         println!("Stake account: {:?}", stake_account);
         println!("lamports: {}", account_info.lamports);
-
-        log_scenario_end(1, "");
     }
 }
