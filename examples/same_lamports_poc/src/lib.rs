@@ -8,14 +8,8 @@ use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction;
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
-};
-use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait, send_utxo,
-    },
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
+    BitcoinHelper, Config, ProgramDeployer, Status,
 };
 
 pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/same_lamports_poc.so";
@@ -24,20 +18,27 @@ pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/same_lam
 #[should_panic]
 #[test]
 fn poc_same_lamports() {
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config.arch_node_url);
 
     let (program_keypair, _) =
-        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+        with_secret_key_file("program.json").expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair, config.network)
+        .unwrap();
 
-    let program_pubkey = deploy_program(
-        "same_lamports_poc".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
+    let deployer = ProgramDeployer::new(&config.arch_node_url, config.network);
+
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "same_lamports_poc".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
     let fee_payer_pubkey = Pubkey::from_slice(
         &XOnlyPublicKey::from_keypair(&authority_keypair)
@@ -107,26 +108,30 @@ fn poc_same_lamports() {
     let transaction1 = build_and_sign_transaction(
         message1,
         vec![account_keypair1, authority_keypair, account_keypair2],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
     let transaction2 = build_and_sign_transaction(
         message2,
         vec![account_keypair1, authority_keypair, account_keypair3],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let account1_balance_before = read_account_info(account_pubkey1).lamports;
+    let account1_balance_before = client.read_account_info(account_pubkey1).unwrap().lamports;
     dbg!("Account 1 balance before: ", account1_balance_before);
-    let account2_balance_before = read_account_info(account_pubkey2).lamports;
+    let account2_balance_before = client.read_account_info(account_pubkey2).unwrap().lamports;
     dbg!("Account 2 balance before: ", account2_balance_before);
 
-    let account3_balance_before = read_account_info(account_pubkey3).lamports;
+    let account3_balance_before = client.read_account_info(account_pubkey3).unwrap().lamports;
     dbg!("Account 3 balance before: ", account3_balance_before);
 
-    let block_transactions = send_transactions_and_wait(vec![transaction1, transaction2]);
+    let txids = client
+        .send_transactions(vec![transaction1, transaction2])
+        .unwrap();
+
+    let block_transactions = client.wait_for_processed_transactions(txids).unwrap();
 
     assert_eq!(
         block_transactions[0].status,
@@ -140,13 +145,13 @@ fn poc_same_lamports() {
         "Transaction failed processing"
     );
 
-    let account1_balance_after = read_account_info(account_pubkey1).lamports;
+    let account1_balance_after = client.read_account_info(account_pubkey1).unwrap().lamports;
     dbg!("Account 1 balance after: ", account1_balance_after);
 
-    let account2_balance_after = read_account_info(account_pubkey2).lamports;
+    let account2_balance_after = client.read_account_info(account_pubkey2).unwrap().lamports;
     dbg!("Account 2 balance after: ", account2_balance_after);
 
-    let account3_balance_after = read_account_info(account_pubkey3).lamports;
+    let account3_balance_after = client.read_account_info(account_pubkey3).unwrap().lamports;
     dbg!("Account 3 balance after: ", account3_balance_after);
 
     assert_eq!(
@@ -162,8 +167,10 @@ fn create_account(
     program_pubkey: &Pubkey,
     fee_payer_pubkey: &Pubkey,
 ) -> (UntweakedKeypair, Pubkey) {
-    let (account_keypair1, account_pubkey1, _) = generate_new_keypair(BITCOIN_NETWORK);
-    let (txid1, vout1) = send_utxo(account_pubkey1);
+    let config = Config::localnet();
+    let (account_keypair1, account_pubkey1, _) = generate_new_keypair(config.network);
+    let helper = BitcoinHelper::new(&config);
+    let (txid1, vout1) = helper.send_utxo(account_pubkey1).unwrap();
     println!("Account 1 created with address, {:?}", account_pubkey1.0);
 
     let txid1 = build_and_sign_transaction(
@@ -181,13 +188,14 @@ fn create_account(
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![authority_keypair, account_keypair1],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let processed_tx = send_transactions_and_wait(vec![txid1]);
+    let txid = client.send_transaction(txid1).unwrap();
+    let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
     assert_eq!(
-        processed_tx[0].status,
+        processed_tx.status,
         Status::Processed,
         "Account 1 creation transaction failed"
     );
