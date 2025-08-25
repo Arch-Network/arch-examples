@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 arch_sdk = "0.5.6"
-arch_test_sdk = "0.5.6"
 arch_program = "0.5.6"
 bip322 = "0.0.9"
 bitcoincore-rpc = "0.19.0"
@@ -14,13 +13,13 @@ borsh = { version = "1.4.0", features = ["derive"] }
 bitcoin = { version = "0.32.3", features = ["serde", "rand"] }
 log = "0.4"
 tracing.workspace = true
-tracing-subscriber = { version = "0.3.3", features = ["env-filter","ansi"] }
+tracing-subscriber = { version = "0.3.3", features = ["env-filter", "ansi"] }
 rand_core = "0.6.4"
 anyhow = "1"
 serde_json = "1.0.128"
 indicatif = "0.17.8"
 termsize = "0.1.9"
-libsecp256k1 = { version = "0.7.0", features = ["hmac"]}
+libsecp256k1 = { version = "0.7.0", features = ["hmac"] }
 sha256 = "1.5.0"
 
 [dev-dependencies]

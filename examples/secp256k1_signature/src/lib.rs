@@ -9,16 +9,9 @@ pub mod secp256k1_signature_tests {
     use arch_sdk::generate_new_keypair;
     use arch_sdk::with_secret_key_file;
     use arch_sdk::ArchRpcClient;
+    use arch_sdk::Config;
+    use arch_sdk::ProgramDeployer;
     use arch_sdk::Status;
-    use arch_test_sdk::constants::BITCOIN_NETWORK;
-    use arch_test_sdk::constants::NODE1_ADDRESS;
-    use arch_test_sdk::constants::PROGRAM_FILE_PATH;
-    use arch_test_sdk::helper::create_and_fund_account_with_faucet;
-    use arch_test_sdk::helper::deploy_program;
-    use arch_test_sdk::helper::send_transactions_and_wait;
-    use arch_test_sdk::logging::init_logging;
-    use arch_test_sdk::logging::log_scenario_end;
-    use arch_test_sdk::logging::log_scenario_start;
     use borsh::{BorshDeserialize, BorshSerialize};
 
     use libsecp256k1::sign;
@@ -36,27 +29,34 @@ pub mod secp256k1_signature_tests {
     #[serial]
     #[test]
     fn test_successful_signature() {
-        init_logging();
-        log_scenario_start(
-            1,
-            "Signing a message and verifying the signature within the program",
+        println!("Signing a message and verifying the signature within the program",);
+        println!(
+
             "Successful verification of a Secp256k1 signature, provided the message hash, the signature, and the 64-bytes compressed pubkey",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config.arch_node_url);
 
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
-        let program_pubkey = deploy_program(
-            "Secp256k1-signature".to_string(),
-            ELF_PATH.to_string(),
-            program_keypair,
-            authority_keypair,
-        );
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair, config.network)
+            .unwrap();
 
-        let (signing_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let deployer = ProgramDeployer::new(&config.arch_node_url, config.network);
+
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Secp256k1-signature".to_string(),
+                program_keypair,
+                authority_keypair,
+                &ELF_PATH.to_string(),
+            )
+            .unwrap();
+
+        let (signing_keypair, _, _) = generate_new_keypair(Config::localnet().network);
         let message_slice = "Message".as_bytes();
         let message_digest = sha256::digest(message_slice);
         let message_hash = hex::decode(message_digest.clone()).unwrap();
@@ -91,38 +91,46 @@ pub mod secp256k1_signature_tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
-            BITCOIN_NETWORK,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
-        let block_transactions = send_transactions_and_wait(vec![transaction]);
-        let processed_transaction = block_transactions[0].clone();
+
+        let txid = client.send_transaction(transaction).unwrap();
+        let block_transactions = client.wait_for_processed_transaction(&txid).unwrap();
+        let processed_transaction = block_transactions.clone();
         assert!(matches!(processed_transaction.status, Status::Processed));
-        log_scenario_end(1, "Verified the signature successfully !");
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_failing_signature() {
-        init_logging();
-        log_scenario_start(
-            2,
-            "Verifying an erroneous signature",
+        println!("Verifying an erroneous signature",);
+        println!(
             "Failing verification of a Secp256k1 signature, provided the message hash, an erroneous signature, and the 64-bytes compressed pubkey",
         );
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config.arch_node_url);
 
         let (program_keypair, _) =
-            with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
-        let program_pubkey = deploy_program(
-            "Secp256k1-signature".to_string(),
-            ELF_PATH.to_string(),
-            program_keypair,
-            authority_keypair,
-        );
-        let (signing_keypair, _, _) = generate_new_keypair(BITCOIN_NETWORK);
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair, config.network)
+            .unwrap();
+
+        let deployer = ProgramDeployer::new(&config.arch_node_url, config.network);
+
+        let program_pubkey = deployer
+            .try_deploy_program(
+                "Secp256k1-signature".to_string(),
+                program_keypair,
+                authority_keypair,
+                &ELF_PATH.to_string(),
+            )
+            .unwrap();
+
+        let (signing_keypair, _, _) = generate_new_keypair(config.network);
         let message_slice = "Message".as_bytes();
         let message_digest = sha256::digest(message_slice);
         let message_hash = hex::decode(message_digest.clone()).unwrap();
@@ -159,12 +167,12 @@ pub mod secp256k1_signature_tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair],
-            BITCOIN_NETWORK,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
-        let block_transactions = send_transactions_and_wait(vec![transaction]);
-        let processed_transaction = block_transactions[0].clone();
+        let txid = client.send_transaction(transaction).unwrap();
+        let block_transactions = client.wait_for_processed_transaction(&txid).unwrap();
+        let processed_transaction = block_transactions.clone();
         assert!(matches!(processed_transaction.status, Status::Failed(_)));
-        log_scenario_end(2, "Program signature verification failed as expected !");
     }
 }
