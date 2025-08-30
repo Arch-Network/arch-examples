@@ -1,5 +1,6 @@
 #![cfg(test)]
 use arch_program::sanitized::ArchMessage;
+use arch_test_sdk::constants::CALLER_FILE_PATH;
 use bitcoin::XOnlyPublicKey;
 
 use arch_program::account::{AccountMeta, MIN_ACCOUNT_LAMPORTS};
@@ -139,4 +140,67 @@ fn poc_inflate_balance() {
         account_balance_before * 2,
         "Account balance after the TX shouldn't be doubled"
     );
+}
+
+#[ignore]
+#[test]
+fn testing_pay_fees_dos() {
+    let client = ArchRpcClient::new(NODE1_ADDRESS);
+
+    let (program_keypair, _) =
+        with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
+
+    let (authority_keypair, authority_pubkey) =
+        with_secret_key_file(CALLER_FILE_PATH).expect("getting caller info should not fail");
+    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
+    let (first_account_keypair, first_account_pubkey, address) =
+        generate_new_keypair(BITCOIN_NETWORK);
+
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[system_instruction::transfer(
+                &authority_pubkey,
+                &first_account_pubkey,
+                256,
+            )],
+            Some(authority_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![authority_keypair],
+        BITCOIN_NETWORK,
+    )
+    .unwrap();
+
+    let block_transactions = send_transactions_and_wait(vec![transaction.clone()]);
+
+    let authority_balance_before = read_account_info(authority_pubkey).lamports;
+    dbg!("Authority balance before: ", authority_balance_before);
+
+    let account_balance_before = read_account_info(first_account_pubkey).lamports;
+    dbg!("Account balance before: ", account_balance_before);
+
+    let transaction = build_and_sign_transaction(
+        ArchMessage::new(
+            &[system_instruction::transfer(
+                &first_account_pubkey,
+                &first_account_pubkey,
+                0,
+            )],
+            Some(first_account_pubkey),
+            client.get_best_block_hash().unwrap(),
+        ),
+        vec![first_account_keypair],
+        BITCOIN_NETWORK,
+    )
+    .unwrap();
+
+    let block_transactions = send_transactions_and_wait(vec![transaction.clone()]);
+
+    // It should fail because the account doesn't have enough lamports to pay the fees
+    // we cancel the transaction in this case
+    assert!(matches!(block_transactions[0].status, Status::Failed(_)));
+
+    let account_balance_after = read_account_info(first_account_pubkey).lamports;
+    dbg!("Account balance after: ", account_balance_after);
 }
