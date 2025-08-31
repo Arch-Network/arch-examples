@@ -147,14 +147,14 @@ fn poc_inflate_balance() {
 fn testing_pay_fees_dos() {
     let client = ArchRpcClient::new(NODE1_ADDRESS);
 
-    let (program_keypair, _) =
+    let (_program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey) =
         with_secret_key_file(CALLER_FILE_PATH).expect("getting caller info should not fail");
     create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
-    let (first_account_keypair, first_account_pubkey, address) =
+    let (first_account_keypair, first_account_pubkey, _address) =
         generate_new_keypair(BITCOIN_NETWORK);
 
     let transaction = build_and_sign_transaction(
@@ -172,7 +172,7 @@ fn testing_pay_fees_dos() {
     )
     .unwrap();
 
-    let block_transactions = send_transactions_and_wait(vec![transaction.clone()]);
+    let _block_transactions = send_transactions_and_wait(vec![transaction.clone()]);
 
     let authority_balance_before = read_account_info(authority_pubkey).lamports;
     dbg!("Authority balance before: ", authority_balance_before);

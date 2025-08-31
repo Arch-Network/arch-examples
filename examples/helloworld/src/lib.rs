@@ -216,7 +216,7 @@ mod tests {
 
         let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
 
-        let program_pubkey = deployer
+        let _program_pubkey = deployer
             .try_deploy_program(
                 "Hello World Program".to_string(),
                 program_keypair,
@@ -244,7 +244,7 @@ mod tests {
 
         let bitcoin_helper = BitcoinHelper::new(&bitcoin_config);
 
-        let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
+        let (_txid, _vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
             ArchMessage::new(
@@ -265,10 +265,10 @@ mod tests {
             client.read_account_info(authority_pubkey).unwrap().lamports
         );
         let arch_rpc_client = ArchRpcClient::new(node1_address);
-        let txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
+        let _txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
 
         let txids = client.send_transactions(vec![transaction]).unwrap();
-        let block_transactions = client.wait_for_processed_transactions(txids).unwrap();
+        let _block_transactions = client.wait_for_processed_transactions(txids).unwrap();
 
         println!(
             "Authority pubkey {:?}",
