@@ -36,16 +36,16 @@ pub mod secp256k1_signature_tests {
         );
 
         let config = Config::localnet();
-        let client = ArchRpcClient::new(&config.arch_node_url);
+        let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
             with_secret_key_file(".program.json").expect("getting caller info should not fail");
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&authority_keypair, config.network)
+            .create_and_fund_account_with_faucet(&authority_keypair)
             .unwrap();
 
-        let deployer = ProgramDeployer::new(&config.arch_node_url, config.network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(
@@ -110,16 +110,16 @@ pub mod secp256k1_signature_tests {
             "Failing verification of a Secp256k1 signature, provided the message hash, an erroneous signature, and the 64-bytes compressed pubkey",
         );
         let config = Config::localnet();
-        let client = ArchRpcClient::new(&config.arch_node_url);
+        let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
             with_secret_key_file(".program.json").expect("getting caller info should not fail");
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&authority_keypair, config.network)
+            .create_and_fund_account_with_faucet(&authority_keypair)
             .unwrap();
 
-        let deployer = ProgramDeployer::new(&config.arch_node_url, config.network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(

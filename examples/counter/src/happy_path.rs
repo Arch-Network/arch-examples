@@ -9,17 +9,15 @@ use crate::{
 use arch_program::sanitized::ArchMessage;
 
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
+    Status,
 };
 use arch_test_sdk::{
     constants::{
         BITCOIN_NETWORK, BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME,
-        NODE1_ADDRESS, PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH,
+        PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH,
     },
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait,
-    },
+    helper::{deploy_program, read_account_info, send_transactions_and_wait},
     logging::{init_logging, log_scenario_end, log_scenario_start},
 };
 use bitcoincore_rpc::{Auth, Client, RpcApi};
@@ -41,7 +39,11 @@ fn counter_initialization_test() {
 
     let (authority_keypair, _) = with_secret_key_file(PROGRAM_AUTHORITY_FILE_PATH)
         .expect("getting caller info should not fail");
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -66,13 +68,16 @@ fn counter_init_and_inc_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it in a separate block "
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let account_info = read_account_info(authority_pubkey);
 
@@ -148,13 +153,16 @@ fn counter_init_and_inc_transaction_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same transaction, using two separate instructions"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -217,13 +225,16 @@ fn counter_init_and_inc_block_test() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same block, using two separate transactions"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -303,13 +314,16 @@ fn counter_init_and_inc_anchored() {
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),

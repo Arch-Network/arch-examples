@@ -6,12 +6,12 @@ mod update_pubkey_package_tests {
         sanitized::ArchMessage,
         vote::{instruction::update_pubkey_package, validator_state::SharedValidatorState},
     };
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
+    use arch_sdk::{
+        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
+    };
     use arch_test_sdk::{
-        constants::{BITCOIN_NETWORK, NODE1_ADDRESS},
-        helper::{
-            create_and_fund_account_with_faucet, read_account_info, send_transactions_and_wait,
-        },
+        constants::BITCOIN_NETWORK,
+        helper::{read_account_info, send_transactions_and_wait},
         logging::{init_logging, log_scenario_end, log_scenario_start},
     };
     use serial_test::serial;
@@ -27,15 +27,18 @@ mod update_pubkey_package_tests {
             "Updating the pubkey package outside the epoch transition block",
         );
 
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
+
         let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair)
+            .unwrap();
 
         let update_instruction = update_pubkey_package(
             &arch_program::pubkey::Pubkey(SHARED_VALIDATOR_DATA_ACCOUNT_ID),
             &[0, 0, 1],
         );
-
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
 
         let tx = build_and_sign_transaction(
             ArchMessage::new(

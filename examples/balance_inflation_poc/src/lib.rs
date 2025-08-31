@@ -8,14 +8,12 @@ use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction;
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
+    Status,
 };
 use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait, send_utxo,
-    },
+    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+    helper::{deploy_program, read_account_info, send_transactions_and_wait, send_utxo},
 };
 
 pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/balance_inflation_poc.so";
@@ -23,13 +21,16 @@ pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/balance_
 #[ignore]
 #[test]
 fn poc_inflate_balance() {
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "Balance Inflation POC".to_string(),
@@ -62,7 +63,7 @@ fn poc_inflate_balance() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![authority_keypair, account_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
@@ -114,7 +115,7 @@ fn poc_inflate_balance() {
     let transaction = build_and_sign_transaction(
         message,
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
@@ -145,17 +146,20 @@ fn poc_inflate_balance() {
 #[ignore]
 #[test]
 fn testing_pay_fees_dos() {
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (_program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey) =
         with_secret_key_file(CALLER_FILE_PATH).expect("getting caller info should not fail");
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let (first_account_keypair, first_account_pubkey, _address) =
-        generate_new_keypair(BITCOIN_NETWORK);
+        generate_new_keypair(config.network);
 
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
@@ -168,7 +172,7 @@ fn testing_pay_fees_dos() {
             client.get_best_block_hash().unwrap(),
         ),
         vec![authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .unwrap();
 

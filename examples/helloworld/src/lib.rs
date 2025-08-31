@@ -26,22 +26,19 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_hello_world() {
-        let test_config = Config::localnet();
-        let node1_address = &test_config.arch_node_url;
-        let bitcoin_network = test_config.network;
-
-        let client = ArchRpcClient::new(node1_address);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
             with_secret_key_file(&".program.json").expect("getting caller info should not fail");
 
-        let (authority_keypair, _, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, _, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&authority_keypair)
             .unwrap();
 
-        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(
@@ -68,21 +65,18 @@ mod tests {
     #[serial]
     #[test]
     fn test_deploy_call() {
-        let test_config = Config::localnet();
-        let node1_address = &test_config.arch_node_url;
-        let bitcoin_network = test_config.network;
-
-        let client = ArchRpcClient::new(node1_address);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
             with_secret_key_file(&".program.json").expect("getting caller info should not fail");
 
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&authority_keypair)
             .unwrap();
 
-        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(
@@ -98,19 +92,17 @@ mod tests {
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let (first_account_keypair, first_account_pubkey, address) =
-            generate_new_keypair(bitcoin_network);
+        let (first_account_keypair, first_account_pubkey, _address) =
+            generate_new_keypair(config.network);
 
-        println!(
-            "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-            arch_sdk::get_explorer_address_url(bitcoin_network, &address.to_string())
-        );
+        // println!(
+        //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
+        //     arch_sdk::get_explorer_address_url(&config.network, &address.to_string())
+        // );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let bitcoin_config = Config::localnet();
-
-        let bitcoin_helper = BitcoinHelper::new(&bitcoin_config);
+        let bitcoin_helper = BitcoinHelper::new(&config);
         let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
@@ -128,7 +120,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -161,7 +153,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -198,11 +190,9 @@ mod tests {
     #[serial]
     #[test]
     fn double_spent_shouldnt_be_possible() {
-        let test_config = Config::localnet();
-        let node1_address = &test_config.arch_node_url;
-        let bitcoin_network = test_config.network;
+        let config = Config::localnet();
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
             with_secret_key_file(&".program.json").expect("getting caller info should not fail");
@@ -211,10 +201,10 @@ mod tests {
             with_secret_key_file(".caller.json").expect("getting caller info should not fail");
 
         client
-            .create_and_fund_account_with_faucet(&authority_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&authority_keypair)
             .unwrap();
 
-        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+        let deployer = ProgramDeployer::new(&config);
 
         let _program_pubkey = deployer
             .try_deploy_program(
@@ -229,20 +219,18 @@ mod tests {
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let (first_account_keypair, first_account_pubkey, address) =
-            generate_new_keypair(bitcoin_network);
+        let (first_account_keypair, first_account_pubkey, _address) =
+            generate_new_keypair(config.network);
         // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
 
-        println!(
-            "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-            arch_sdk::get_explorer_address_url(bitcoin_network, &address.to_string())
-        );
+        // println!(
+        //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
+        //     arch_sdk::get_explorer_address_url(&config.network, &address.to_string())
+        // );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let bitcoin_config = Config::localnet();
-
-        let bitcoin_helper = BitcoinHelper::new(&bitcoin_config);
+        let bitcoin_helper = BitcoinHelper::new(&config);
 
         let (_txid, _vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
@@ -257,14 +245,14 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![first_account_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
         println!(
             "Authority pubkey {:?}",
             client.read_account_info(authority_pubkey).unwrap().lamports
         );
-        let arch_rpc_client = ArchRpcClient::new(node1_address);
+        let arch_rpc_client = ArchRpcClient::new(&config);
         let _txids = arch_rpc_client.send_transactions(vec![transaction.clone()]);
 
         let txids = client.send_transactions(vec![transaction]).unwrap();

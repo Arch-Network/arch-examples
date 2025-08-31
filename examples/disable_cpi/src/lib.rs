@@ -8,13 +8,11 @@ mod tests {
     use arch_program::{account::AccountMeta, instruction::Instruction, sanitized::ArchMessage};
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
-        Status,
+        Config, Status,
     };
     use arch_test_sdk::{
-        constants::{
-            BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH,
-        },
-        helper::{create_and_fund_account_with_faucet, deploy_program, send_transactions_and_wait},
+        constants::{BITCOIN_NETWORK, PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH},
+        helper::{deploy_program, send_transactions_and_wait},
         logging::{init_logging, log_scenario_end, log_scenario_start},
     };
     use serial_test::serial;
@@ -39,7 +37,12 @@ mod tests {
         let (authority_keypair, authority_pubkey) =
             with_secret_key_file(PROGRAM_AUTHORITY_FILE_PATH)
                 .expect("getting caller info should not fail");
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair)
+            .unwrap();
 
         let program_pubkey = deploy_program(
             "Disable-CPI".to_string(),
@@ -48,7 +51,7 @@ mod tests {
             authority_keypair,
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(&config);
 
         let instruction = Instruction::new(program_pubkey, vec![0], vec![]);
         let tx = build_and_sign_transaction(
@@ -93,7 +96,11 @@ mod tests {
             with_secret_key_file(PROGRAM_AUTHORITY_FILE_PATH)
                 .expect("getting caller info should not fail");
 
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair)
+            .unwrap();
 
         let base_program_pubkey = deploy_program(
             "Disable-CPI".to_string(),
@@ -120,7 +127,7 @@ mod tests {
             }],
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(&config);
 
         let cpi_tx = build_and_sign_transaction(
             ArchMessage::new(
@@ -168,7 +175,11 @@ mod tests {
             with_secret_key_file(PROGRAM_AUTHORITY_FILE_PATH)
                 .expect("getting caller info should not fail");
 
-        create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
+        client
+            .create_and_fund_account_with_faucet(&authority_keypair)
+            .unwrap();
 
         let base_program_pubkey = deploy_program(
             "Disable-CPI".to_string(),
@@ -195,7 +206,7 @@ mod tests {
             }],
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let client = ArchRpcClient::new(&config);
 
         let cpi_tx = build_and_sign_transaction(
             ArchMessage::new(

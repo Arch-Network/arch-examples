@@ -5,18 +5,16 @@ use std::{str::FromStr, thread, time::Duration};
 
 use arch_program::sanitized::ArchMessage;
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
+    Status,
 };
 use arch_test_sdk::{
     constants::{
         BITCOIN_NETWORK, BITCOIN_NODE1_ADDRESS, BITCOIN_NODE1_P2P_ADDRESS, BITCOIN_NODE2_ADDRESS,
         BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME, MINING_ADDRESS,
-        NODE1_ADDRESS, PROGRAM_FILE_PATH,
+        PROGRAM_FILE_PATH,
     },
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait,
-    },
+    helper::{deploy_program, read_account_info, send_transactions_and_wait},
     logging::{init_logging, log_scenario_end, log_scenario_start, print_title},
 };
 use bitcoin::{address::NetworkChecked, Address, BlockHash, Network, Txid};
@@ -139,7 +137,8 @@ fn isolate_nodes() {
 fn single_utxo_rbf_two_accounts() {
     init_logging();
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     log_scenario_start(23,
         "2 Counters, same utxo replaced by a greater fee",
@@ -151,11 +150,15 @@ fn single_utxo_rbf_two_accounts() {
 
     let (first_authority_keypair, first_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&second_authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -312,22 +315,29 @@ fn single_utxo_rbf_three_accounts() {
         "Roll Back scenario : Same utxo is used to update different accounts, the replaced transactions should be rolled back"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (first_authority_keypair, first_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&second_authority_keypair)
+        .unwrap();
 
     let (third_authority_keypair, third_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&third_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&third_authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -535,18 +545,23 @@ fn rbf_orphan_arch_txs() {
         "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Sane utxo is then used to update another account in RBF"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (first_authority_keypair, first_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&second_authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),
@@ -753,7 +768,8 @@ fn rbf_reorg() {
         "Roll Back scenario : First account updated with utxo, then updated again without anchoring. Same utxo is then used to update another account in RBF"
     );
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     connect_nodes();
 
@@ -762,11 +778,15 @@ fn rbf_reorg() {
 
     let (first_authority_keypair, first_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&first_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
         generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&second_authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&second_authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),

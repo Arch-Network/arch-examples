@@ -8,10 +8,7 @@ use arch_program::{
     },
     pubkey::Pubkey,
 };
-use arch_test_sdk::{
-    constants::BITCOIN_NETWORK,
-    helper::{create_and_fund_account_with_faucet, try_read_account_info},
-};
+use arch_sdk::{ArchRpcClient, Config};
 use hex::decode;
 
 pub(crate) fn get_peer_keypair_from_file(peer_number: u8) -> Keypair {
@@ -47,15 +44,17 @@ pub(crate) fn get_bootnode_keypair_from_file() -> Keypair {
 }
 
 pub fn try_to_create_and_fund_account(keypair: &Keypair) {
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
     let keypair_pubkey = keypair.public_key().x_only_public_key().0.serialize();
     let keypair_arch_pubkey = Pubkey::from_slice(&keypair_pubkey);
-    let account_info = try_read_account_info(keypair_arch_pubkey);
+    let account_info = client.read_account_info(keypair_arch_pubkey);
 
-    if account_info.is_some() {
+    if account_info.is_ok() {
         println!("\x1b[33m\x1b[1mAccount already exists, skipping creation ! \x1b[0m");
     } else {
         println!("Account does not exist, creating it !");
-        create_and_fund_account_with_faucet(keypair, BITCOIN_NETWORK);
+        client.create_and_fund_account_with_faucet(keypair).unwrap();
         println!("Account created and funded !");
     }
 }

@@ -7,27 +7,28 @@ use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
 use arch_program::system_instruction;
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Status,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
+    Status,
 };
 use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{
-        create_and_fund_account_with_faucet, deploy_program, read_account_info,
-        send_transactions_and_wait, send_utxo,
-    },
+    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+    helper::{deploy_program, read_account_info, send_transactions_and_wait, send_utxo},
 };
 
 pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/unbalanced_cpi_poc.so";
 #[ignore]
 #[test]
 fn poc_unbalanced_cpi() {
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "Unbalanced CPI POC".to_string(),

@@ -14,13 +14,11 @@ mod tests {
             state::{VoteInit, VoteState},
         },
     };
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
+    use arch_sdk::{
+        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
+    };
     use arch_test_sdk::{
-        constants::{BITCOIN_NETWORK, NODE1_ADDRESS},
-        helper::{
-            create_and_fund_account_with_faucet, read_account_info, send_transactions_and_wait,
-            try_read_account_info,
-        },
+        helper::{read_account_info, send_transactions_and_wait, try_read_account_info},
         logging::{init_logging, log_scenario_end, log_scenario_start},
     };
     use serial_test::serial;
@@ -39,13 +37,16 @@ mod tests {
             "Happy Path Scenario : creating and initializing the vote account",
         );
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, node_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair)
+            .unwrap();
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
+        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (_, authority_pubkey, _) = generate_new_keypair(config.network);
 
         initialize_vote_account(
             &client,
@@ -80,7 +81,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*user_keypair, *vote_keypair],
-            BITCOIN_NETWORK,
+            client.config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -110,14 +111,17 @@ mod tests {
             "Happy Path Scenario : authorizing the vote account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, node_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, new_authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair)
+            .unwrap();
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
+        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        let (_, new_authority_pubkey, _) = generate_new_keypair(config.network);
 
         initialize_vote_account(
             &client,
@@ -140,7 +144,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -167,13 +171,16 @@ mod tests {
             "Happy Path Scenario : updating the commission of the vote account",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, node_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair)
+            .unwrap();
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
+        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
 
         initialize_vote_account(
             &client,
@@ -196,7 +203,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            BITCOIN_NETWORK,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -223,15 +230,18 @@ mod tests {
             "Happy Path Scenario : creating and initializing vote account for a whitelisted peer",
         );
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
+
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
+        client
+            .create_and_fund_account_with_faucet(&user_keypair)
+            .unwrap();
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
 
         let node_keypair = get_peer_keypair_from_file(0);
         let serialized_node_pubkey = node_keypair.public_key().x_only_public_key().0.serialize();
         let node_pubkey = Pubkey::from_slice(&serialized_node_pubkey);
-
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
 
         match try_read_account_info(node_pubkey) {
             Some(account_info) => {

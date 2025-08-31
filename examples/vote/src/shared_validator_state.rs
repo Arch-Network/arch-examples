@@ -11,9 +11,7 @@ pub(crate) mod shared_validator_state_tests {
     use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
     use arch_test_sdk::{
         constants::BITCOIN_NETWORK,
-        helper::{
-            create_and_fund_account_with_faucet, read_account_info, send_transactions_and_wait,
-        },
+        helper::{read_account_info, send_transactions_and_wait},
     };
 
     use crate::utils::get_bootnode_keypair_from_file;
@@ -36,7 +34,9 @@ pub(crate) mod shared_validator_state_tests {
             true => {
                 println!("Shared validator account does not exist, initializing it !");
                 let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-                create_and_fund_account_with_faucet(&user_keypair, BITCOIN_NETWORK);
+                client
+                    .create_and_fund_account_with_faucet(&user_keypair)
+                    .unwrap();
 
                 let bootnode_keypair = get_bootnode_keypair_from_file();
 

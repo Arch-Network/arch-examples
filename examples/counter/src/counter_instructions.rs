@@ -5,8 +5,8 @@ use arch_program::sanitized::ArchMessage;
 use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
-use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient};
-use arch_test_sdk::constants::{BITCOIN_NETWORK, NODE1_ADDRESS};
+use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config};
+use arch_test_sdk::constants::BITCOIN_NETWORK;
 use arch_test_sdk::helper::{read_account_info, send_transactions_and_wait, send_utxo};
 use bitcoin::key::Keypair;
 use bitcoin::XOnlyPublicKey;
@@ -21,9 +21,8 @@ pub(crate) fn start_new_counter(
     initial_value: u16,
     fee_payer_keypair: &Keypair,
 ) -> Result<(Pubkey, Keypair)> {
-    //print_title("COUNTER INITIALIZATION", 5);
-
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let fee_payer_pubkey = Pubkey::from_slice(
         &XOnlyPublicKey::from_keypair(fee_payer_keypair)

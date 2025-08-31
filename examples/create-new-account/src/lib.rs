@@ -3,11 +3,9 @@ use arch_program::sanitized::ArchMessage;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
-use arch_sdk::{build_and_sign_transaction, with_secret_key_file, ArchRpcClient};
-use arch_test_sdk::constants::{BITCOIN_NETWORK, NODE1_ADDRESS};
-use arch_test_sdk::helper::{
-    create_and_fund_account_with_faucet, prepare_fees, send_transactions_and_wait, send_utxo,
-};
+use arch_sdk::{build_and_sign_transaction, with_secret_key_file, ArchRpcClient, Config};
+use arch_test_sdk::constants::BITCOIN_NETWORK;
+use arch_test_sdk::helper::{prepare_fees, send_transactions_and_wait, send_utxo};
 use borsh::BorshSerialize;
 
 #[derive(BorshSerialize)]
@@ -26,11 +24,14 @@ pub struct CreateAccountParams {
 /// # Returns
 /// * `Result<()>` - Success or error status of the account creation
 pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (account_keypair, account_pubkey) = with_secret_key_file(".test_account.json")?;
     let (payer_keypair, payer_pubkey) = with_secret_key_file(".test_account.json")?;
-    create_and_fund_account_with_faucet(&payer_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&payer_keypair)
+        .unwrap();
 
     // Step 1: Create and send a UTXO (Unspent Transaction Output) to the new account
     // This UTXO will be used to fund the account creation

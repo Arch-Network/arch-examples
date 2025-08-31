@@ -18,21 +18,19 @@ mod tests {
     #[serial]
     #[test]
     fn test_stake_initialize() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Stake Account Initialization",);
         println!("Happy Path Scenario : creating and initializing the stake account",);
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (_, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(config.network);
+        let (_, authority_pubkey, _) = generate_new_keypair(config.network);
 
         let tx = build_and_sign_transaction(
             ArchMessage::new(
@@ -46,7 +44,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -72,25 +70,23 @@ mod tests {
     #[serial]
     #[test]
     fn test_stake_authorize() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Stake Account Authorization",);
         println!(
             "Happy Path Scenario : creating and initializing the stake account then authorizing the stake account",
         );
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (_, new_stake_authority_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (_, new_withdraw_authority_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(config.network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        let (_, new_stake_authority_pubkey, _) = generate_new_keypair(config.network);
+        let (_, new_withdraw_authority_pubkey, _) = generate_new_keypair(config.network);
 
         let tx1 = build_and_sign_transaction(
             ArchMessage::new(
@@ -104,7 +100,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -120,7 +116,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -156,7 +152,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -183,27 +179,25 @@ mod tests {
     #[serial]
     #[test]
     fn test_stake_delegate() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Stake Account Delegate",);
         println!(
             "Happy Path Scenario : creating and initializing the stake account then delegating the stake account",
         );
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&stake_keypair)
             .unwrap();
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
 
         let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
@@ -229,7 +223,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -260,7 +254,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -295,27 +289,25 @@ mod tests {
     #[serial]
     #[test]
     fn test_stake_deactivate() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Stake Account Deactivate",);
         println!(
             "Happy Path Scenario : creating and initializing the stake account, delegating the stake account, then deactivating the stake account",
         );
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&stake_keypair)
             .unwrap();
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
 
         let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
@@ -341,7 +333,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -372,7 +364,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -412,7 +404,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -445,27 +437,25 @@ mod tests {
     #[serial]
     #[test]
     fn test_stake_withdraw() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Stake Account Withdraw",);
         println!(
             "Happy Path Scenario : creating and initializing the stake account, delegating the stake account, then withdrawing the stake account",
         );
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
-        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (stake_keypair, stake_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&stake_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&stake_keypair)
             .unwrap();
-        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
+        let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
 
         let stake_account = client.read_account_info(stake_pubkey).unwrap();
         let initial_lamports = stake_account.lamports;
@@ -491,7 +481,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, stake_keypair, vote_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -522,7 +512,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![user_keypair, authority_keypair],
-            bitcoin_network,
+            config.network,
         )
         .unwrap();
 
@@ -560,7 +550,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 
@@ -592,7 +582,7 @@ mod tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![authority_keypair, user_keypair],
-            bitcoin_network,
+            config.network,
         )
         .expect("Failed to build and sign transaction");
 

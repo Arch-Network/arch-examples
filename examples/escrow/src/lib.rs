@@ -57,25 +57,23 @@ mod tests {
     #[ignore]
     #[test]
     fn escrow_test() {
-        let test_config = Config::localnet();
-        let node1_address = &test_config.arch_node_url;
-        let bitcoin_network = test_config.network;
+        let config = Config::localnet();
 
         println!("Program Deployment & Escros Program Initialization",);
         println!("Deploying the Escrow program",);
 
-        let client = ArchRpcClient::new(&node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (maker_keypair, maker_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (maker_keypair, maker_pubkey, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&maker_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&maker_keypair)
             .unwrap();
 
         let (program_keypair, _) =
             with_secret_key_file(".program").expect("getting caller info should not fail");
 
-        let deployer = ProgramDeployer::new(&node1_address, bitcoin_network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(
@@ -93,7 +91,7 @@ mod tests {
         let offer_seeds = &[b"offer", maker_pubkey.as_ref(), &id.to_le_bytes()];
         let expected_offer_pda = Pubkey::find_program_address(offer_seeds, &program_pubkey);
 
-        let helper = BitcoinHelper::new(&test_config);
+        let helper = BitcoinHelper::new(&config);
 
         let (offer_txid, offer_vout) = helper.send_utxo(expected_offer_pda.0).unwrap();
         let offer_utxo = UtxoMeta::from(
@@ -122,9 +120,9 @@ mod tests {
             client.clone(),
         );
 
-        let (taker_keypair, taker_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (taker_keypair, taker_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&taker_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&taker_keypair)
             .unwrap();
 
         let maker_ata_b = create_ata(
@@ -167,11 +165,10 @@ mod tests {
     }
 
     pub fn create_mint(payer: &Pubkey, payer_keypair: Keypair, client: ArchRpcClient) -> Pubkey {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
+        let config = Config::localnet();
 
-        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let helper = BitcoinHelper::new(&test_config);
+        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
+        let helper = BitcoinHelper::new(&config);
         let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
         let mint_utxo = UtxoMeta::from(
             hex::decode(mint_txid.clone()).unwrap().try_into().unwrap(),
@@ -196,7 +193,7 @@ mod tests {
 
         let signers = vec![payer_keypair, mint_keypair];
 
-        let create_account_tx = build_and_sign_transaction(message, signers, bitcoin_network)
+        let create_account_tx = build_and_sign_transaction(message, signers, config.network)
             .expect("Failed to build and sign transaction");
 
         let txid = client.send_transaction(create_account_tx).unwrap();
@@ -219,7 +216,7 @@ mod tests {
 
         let signers = vec![payer_keypair, mint_keypair];
 
-        let initialize_mint_tx = build_and_sign_transaction(message, signers, bitcoin_network)
+        let initialize_mint_tx = build_and_sign_transaction(message, signers, config.network)
             .expect("Failed to build and sign transaction");
 
         let txid = client.send_transaction(initialize_mint_tx).unwrap();

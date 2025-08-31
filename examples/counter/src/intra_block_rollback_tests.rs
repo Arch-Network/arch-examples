@@ -1,11 +1,11 @@
 use arch_program::sanitized::ArchMessage;
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
     RollbackStatus, Status,
 };
 use arch_test_sdk::{
-    constants::{BITCOIN_NETWORK, NODE1_ADDRESS, PROGRAM_FILE_PATH},
-    helper::{create_and_fund_account_with_faucet, deploy_program, send_transactions_and_wait},
+    constants::{BITCOIN_NETWORK, PROGRAM_FILE_PATH},
+    helper::{deploy_program, send_transactions_and_wait},
     logging::{init_logging, print_title},
 };
 use serial_test::serial;
@@ -22,13 +22,16 @@ use crate::{
 fn test_intra_block_tx_cache() {
     init_logging();
 
-    let client = ArchRpcClient::new(NODE1_ADDRESS);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-    create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
+    client
+        .create_and_fund_account_with_faucet(&authority_keypair)
+        .unwrap();
 
     let program_pubkey = deploy_program(
         "E2E-Counter".to_string(),

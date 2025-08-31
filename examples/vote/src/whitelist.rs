@@ -7,8 +7,10 @@ mod whitelist_tests {
     use arch_program::vote::instruction::{add_peer_to_whitelist, remove_peer_from_whitelist};
     use arch_program::vote::validator_state::SharedValidatorState;
     use arch_program::{pubkey::Pubkey, sanitized::ArchMessage};
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
-    use arch_test_sdk::constants::{BITCOIN_NETWORK, NODE1_ADDRESS};
+    use arch_sdk::{
+        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
+    };
+    use arch_test_sdk::constants::BITCOIN_NETWORK;
     use arch_test_sdk::helper::{read_account_info, send_transactions_and_wait};
     use arch_test_sdk::logging::{init_logging, log_scenario_end, log_scenario_start};
     use serial_test::serial;
@@ -132,7 +134,8 @@ mod whitelist_tests {
             "Happy Path Scenario : adding a validator to the whitelist",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
 
@@ -165,14 +168,15 @@ mod whitelist_tests {
             "Happy Path Scenario : adding multiple validators to the whitelist",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
-        let (_, validator1_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, validator2_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, validator3_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (_, validator2_pubkey, _) = generate_new_keypair(config.network);
+        let (_, validator3_pubkey, _) = generate_new_keypair(config.network);
 
         let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
 
@@ -217,11 +221,12 @@ mod whitelist_tests {
             "Happy Path Scenario : adding same validator multiple times",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (_, validator1_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
         let (resulting_state_1, arch_txid_1) =
@@ -230,13 +235,11 @@ mod whitelist_tests {
         let (resulting_state_2, arch_txid_2) =
             add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
 
-        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
-
-        let processed_transaction_1 = rpc_client
+        let processed_transaction_1 = client
             .get_processed_transaction(&arch_txid_1)
             .unwrap()
             .unwrap();
-        let processed_transaction_2 = rpc_client
+        let processed_transaction_2 = client
             .get_processed_transaction(&arch_txid_2)
             .unwrap()
             .unwrap();
@@ -266,18 +269,17 @@ mod whitelist_tests {
             "Happy Path Scenario : adding a validator to the whitelist with an invalid bootnode",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (keypair, validator_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (keypair, validator_pubkey, _) = generate_new_keypair(config.network);
 
         let (resulting_shared_account, resulting_tx) =
             add_validator_to_whitelist(&client, &validator_pubkey, &keypair);
 
-        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
-
-        let processed_transaction = rpc_client
+        let processed_transaction = client
             .get_processed_transaction(&resulting_tx)
             .unwrap()
             .unwrap();
@@ -305,10 +307,11 @@ mod whitelist_tests {
             "Happy Path Scenario : removing a validator from the whitelist",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (_, validator_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
         let _ = add_validator_to_whitelist(&client, &validator_pubkey, &bootnode_keypair);
@@ -336,13 +339,14 @@ mod whitelist_tests {
             "Happy Path Scenario : removing multiple validators from the whitelist",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
         let bootnode_keypair = get_bootnode_keypair_from_file();
-        let (_, validator1_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, validator2_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
-        let (_, validator3_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (_, validator2_pubkey, _) = generate_new_keypair(config.network);
+        let (_, validator3_pubkey, _) = generate_new_keypair(config.network);
 
         let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
         let _ = add_validator_to_whitelist(&client, &validator2_pubkey, &bootnode_keypair);
@@ -377,10 +381,11 @@ mod whitelist_tests {
             "Happy Path Scenario : removing same validator multiple times",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (_, validator1_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
         let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
@@ -389,12 +394,11 @@ mod whitelist_tests {
         let (resulting_state_2, arch_txid_2) =
             remove_validator_from_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
 
-        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
-        let processed_transaction_1 = rpc_client
+        let processed_transaction_1 = client
             .get_processed_transaction(&arch_txid_1)
             .unwrap()
             .unwrap();
-        let processed_transaction_2 = rpc_client
+        let processed_transaction_2 = client
             .get_processed_transaction(&arch_txid_2)
             .unwrap()
             .unwrap();
@@ -418,18 +422,18 @@ mod whitelist_tests {
             "Happy Path Scenario : removing a validator with an invalid bootnode",
         );
 
-        let client = ArchRpcClient::new(NODE1_ADDRESS);
+        let config = Config::localnet();
+        let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (keypair, validator_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (keypair, validator_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
         let _ = add_validator_to_whitelist(&client, &validator_pubkey, &bootnode_keypair);
         let (resulting_shared_account, resulting_tx) =
             remove_validator_from_whitelist(&client, &validator_pubkey, &keypair);
 
-        let rpc_client = ArchRpcClient::new(NODE1_ADDRESS);
-        let processed_transaction = rpc_client
+        let processed_transaction = client
             .get_processed_transaction(&resulting_tx)
             .unwrap()
             .unwrap();

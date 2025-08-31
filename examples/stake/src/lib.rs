@@ -72,25 +72,23 @@ mod stake_tests {
     #[ignore]
     #[test]
     pub fn stake_test() {
-        let test_config = Config::localnet();
-        let bitcoin_network = test_config.network;
-        let node1_address = &test_config.arch_node_url;
+        let config = Config::localnet();
 
         println!("Program Deployment & Stake Program Initialization",);
         println!("Deploying the Stake program",);
 
-        let client = ArchRpcClient::new(node1_address);
+        let client = ArchRpcClient::new(&config);
 
-        let (user_keypair, user_pubkey, _) = generate_new_keypair(bitcoin_network);
+        let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&user_keypair, bitcoin_network)
+            .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
 
         let (program_keypair, _) =
             with_secret_key_file(".program.json").expect("getting caller info should not fail");
 
-        let deployer = ProgramDeployer::new(node1_address, bitcoin_network);
+        let deployer = ProgramDeployer::new(&config);
 
         let program_pubkey = deployer
             .try_deploy_program(
@@ -102,8 +100,8 @@ mod stake_tests {
             .unwrap();
 
         // generate mint keypair and transfer utxos to it
-        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(bitcoin_network);
-        let helper = BitcoinHelper::new(&test_config);
+        let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
+        let helper = BitcoinHelper::new(&config);
         let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
 
         // find stake account and transfer utxos to it
@@ -124,7 +122,7 @@ mod stake_tests {
         // initialize ix
         initialize(
             &client,
-            bitcoin_network,
+            config.network,
             mint_utxo,
             stake_utxo,
             user_pubkey,
@@ -140,7 +138,7 @@ mod stake_tests {
         let user_ata = create_ata(
             &client,
             &helper,
-            bitcoin_network,
+            config.network,
             user_pubkey,
             user_pubkey,
             user_keypair,
@@ -150,7 +148,7 @@ mod stake_tests {
         let stake_token_account = create_ata(
             &client,
             &helper,
-            bitcoin_network,
+            config.network,
             user_pubkey,
             stake_account,
             user_keypair,
@@ -162,7 +160,7 @@ mod stake_tests {
         let mint_amount: u64 = 100;
         mint_to(
             &client,
-            bitcoin_network,
+            config.network,
             mint_amount,
             mint_pubkey,
             user_ata,
@@ -174,7 +172,7 @@ mod stake_tests {
         // stake ix
         stake(
             &client,
-            bitcoin_network,
+            config.network,
             user_pubkey,
             user_keypair,
             user_ata,
@@ -188,7 +186,7 @@ mod stake_tests {
         // unstake ix
         unstake(
             &client,
-            bitcoin_network,
+            config.network,
             user_pubkey,
             user_keypair,
             stake_account,
