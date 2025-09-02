@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-arch_program = "0.5.6"
+arch_program = "0.5.7"
 apl-token = { path = "../../../token" , features = ["no-entrypoint"]}
 apl-associated-token-account= { path = "../../../associated-token-account" , features = ["no-entrypoint"]}
 borsh = { version = "1.5.1", features = ["derive"] }
