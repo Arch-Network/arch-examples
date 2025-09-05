@@ -1,13 +1,14 @@
 use apl_token::instruction::{mint_to, transfer};
 use arch_program::program_pack::Pack;
 use arch_program::{
-    account::{AccountInfo, MIN_ACCOUNT_LAMPORTS},
+    account::{AccountInfo},
     entrypoint, msg,
     program::{invoke, invoke_signed, next_account_info},
     program_error::ProgramError,
     pubkey::Pubkey,
     system_instruction::create_account_with_anchor,
     utxo::UtxoMeta,
+    rent::minimum_rent,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -108,7 +109,7 @@ fn process_initialize(
         &create_account_with_anchor(
             owner.key,
             token_mint.key,
-            MIN_ACCOUNT_LAMPORTS,
+            minimum_rent(apl_token::state::Mint::LEN),
             apl_token::state::Mint::LEN as u64,
             token_program.key,
             mint_utxo
@@ -168,7 +169,7 @@ fn process_initialize(
         &create_account_with_anchor(
             owner.key,
             stake_account.key,
-            MIN_ACCOUNT_LAMPORTS,
+            minimum_rent(serialized_stake_data.len()),
             serialized_stake_data.len() as u64,
             program_id,
             stake_utxo

@@ -1,8 +1,8 @@
 /// Running Tests
 #[cfg(test)]
 mod tests {
-    use arch_program::account::MIN_ACCOUNT_LAMPORTS;
     use arch_program::bpf_loader::LoaderState;
+    use arch_program::rent::minimum_rent;
     use arch_program::sanitized::ArchMessage;
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
@@ -110,7 +110,7 @@ mod tests {
                 &[system_instruction::create_account_with_anchor(
                     &authority_pubkey,
                     &first_account_pubkey,
-                    MIN_ACCOUNT_LAMPORTS,
+                    minimum_rent(0),
                     0,
                     &program_pubkey,
                     hex::decode(txid).unwrap().try_into().unwrap(),

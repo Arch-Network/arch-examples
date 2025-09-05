@@ -1,5 +1,5 @@
 use arch_program::{
-    account::{AccountInfo, MIN_ACCOUNT_LAMPORTS},
+    account::{AccountInfo},
     bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
     entrypoint,
     helper::add_state_transition,
@@ -11,6 +11,7 @@ use arch_program::{
     system_instruction,
     utxo::UtxoMeta,
     system_program::SYSTEM_PROGRAM_ID,
+    rent::minimum_rent,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -55,7 +56,7 @@ pub fn process_instruction<'a>(
         &system_instruction::create_account_with_anchor(
             &payer.key,
             &new_account.key,
-            MIN_ACCOUNT_LAMPORTS,
+            minimum_rent(0),
             0,
             &SYSTEM_PROGRAM_ID,
             params.utxo.txid().try_into().unwrap(),
@@ -100,7 +101,7 @@ pub fn process_instruction<'a>(
     tx.input.push(fees_tx.input[0].clone());
 
     // Create the transaction signing request
-    let inputs = [InputToSign::Sign {
+    let inputs = [InputToSign {
         index: 0,
         signer: factory_state_account.key.clone(),
     }];

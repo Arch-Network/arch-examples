@@ -1,6 +1,7 @@
-use arch_program::account::{AccountMeta, MIN_ACCOUNT_LAMPORTS};
+use arch_program::account::AccountMeta;
 use arch_program::instruction::Instruction;
 use arch_program::pubkey::Pubkey;
+use arch_program::rent::minimum_rent;
 use arch_program::sanitized::ArchMessage;
 use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
@@ -44,7 +45,8 @@ pub(crate) fn start_new_counter(
             &[system_instruction::create_account_with_anchor(
                 &fee_payer_pubkey,
                 &account_pubkey,
-                MIN_ACCOUNT_LAMPORTS,
+                //Increasing initial rent for extra data bytes we need to store
+                minimum_rent(100),
                 0,
                 program_pubkey,
                 hex::decode(txid).unwrap().try_into().unwrap(),

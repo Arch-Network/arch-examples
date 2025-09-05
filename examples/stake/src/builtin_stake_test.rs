@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use arch_program::{
-        account::MIN_ACCOUNT_LAMPORTS,
+        rent::minimum_rent,
         sanitized::ArchMessage,
         stake::{
             self,
@@ -38,7 +38,10 @@ mod tests {
                     &user_pubkey,
                     &stake_pubkey,
                     &Authorized::auto(&authority_pubkey),
-                    MIN_ACCOUNT_LAMPORTS,
+                    // using 0 lamports here instead of `StakeState::size_of()` as
+                    // minimum_rent(0) will be higher anyways
+                    // if change that in future, change here too
+                    minimum_rent(0),
                 ),
                 Some(user_pubkey),
                 client.get_best_finalized_block_hash().unwrap(),
@@ -94,7 +97,7 @@ mod tests {
                     &user_pubkey,
                     &stake_pubkey,
                     &Authorized::auto(&authority_pubkey),
-                    MIN_ACCOUNT_LAMPORTS,
+                    minimum_rent(0),
                 ),
                 Some(user_pubkey),
                 client.get_best_finalized_block_hash().unwrap(),
@@ -214,7 +217,7 @@ mod tests {
                     system_instruction::create_account(
                         &user_pubkey,
                         &vote_pubkey,
-                        MIN_ACCOUNT_LAMPORTS,
+                        minimum_rent(VoteState::size_of_new()),
                         VoteState::size_of_new() as u64,
                         &VOTE_PROGRAM_ID,
                     ),
@@ -324,7 +327,7 @@ mod tests {
                     system_instruction::create_account(
                         &user_pubkey,
                         &vote_pubkey,
-                        MIN_ACCOUNT_LAMPORTS,
+                        minimum_rent(VoteState::size_of_new()),
                         VoteState::size_of_new() as u64,
                         &VOTE_PROGRAM_ID,
                     ),
@@ -472,7 +475,7 @@ mod tests {
                     system_instruction::create_account(
                         &user_pubkey,
                         &vote_pubkey,
-                        MIN_ACCOUNT_LAMPORTS,
+                        minimum_rent(VoteState::size_of_new()),
                         VoteState::size_of_new() as u64,
                         &VOTE_PROGRAM_ID,
                     ),

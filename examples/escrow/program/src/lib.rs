@@ -1,5 +1,5 @@
 use arch_program::{
-    account::{AccountInfo, MIN_ACCOUNT_LAMPORTS},
+    account::{AccountInfo},
     entrypoint, msg,
     program::{invoke, invoke_signed, next_account_info},
     program_error::ProgramError,
@@ -7,6 +7,7 @@ use arch_program::{
     pubkey::Pubkey,
     system_instruction::create_account_with_anchor,
     utxo::UtxoMeta,
+    rent::minimum_rent,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -134,7 +135,7 @@ fn process_make_offer(
         &create_account_with_anchor(
             maker.key,
             offer_info.key,
-            MIN_ACCOUNT_LAMPORTS,
+            minimum_rent(serialized_offer_data.len()),
             serialized_offer_data.len() as u64,
             program_id,
             params

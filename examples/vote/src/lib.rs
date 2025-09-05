@@ -5,9 +5,9 @@ mod whitelist;
 #[cfg(test)]
 mod tests {
     use arch_program::{
-        account::MIN_ACCOUNT_LAMPORTS,
         bitcoin::key::Keypair,
         pubkey::Pubkey,
+        rent::minimum_rent,
         sanitized::ArchMessage,
         vote::{
             self,
@@ -75,7 +75,7 @@ mod tests {
                     user_pubkey,
                     vote_pubkey,
                     &VoteInit::new(*node_pubkey, *authority_pubkey, 0),
-                    MIN_ACCOUNT_LAMPORTS,
+                    minimum_rent(VoteState::size_of_new()),
                 ),
                 Some(*user_pubkey),
                 client.get_best_finalized_block_hash().unwrap(),

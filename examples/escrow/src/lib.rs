@@ -5,8 +5,8 @@ pub const ELF_PATH: &str = "./program/target/sbpf-solana-solana/release/escrow_p
 mod tests {
     use crate::ELF_PATH;
     use arch_program::{
-        account::AccountMeta, program_pack::Pack, pubkey::Pubkey, sanitized::ArchMessage,
-        utxo::UtxoMeta,
+        account::AccountMeta, program_pack::Pack, pubkey::Pubkey, rent::minimum_rent,
+        sanitized::ArchMessage, utxo::UtxoMeta,
     };
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
@@ -180,7 +180,7 @@ mod tests {
                 arch_program::system_instruction::create_account_with_anchor(
                     payer,
                     &mint_pubkey,
-                    arch_program::account::MIN_ACCOUNT_LAMPORTS,
+                    minimum_rent(apl_token::state::Mint::LEN),
                     apl_token::state::Mint::LEN as u64,
                     &apl_token::id(),
                     mint_utxo.txid().try_into().unwrap(),
