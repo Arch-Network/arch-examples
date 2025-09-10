@@ -4,22 +4,15 @@ use crate::{
     counter_helpers::{generate_anchoring, get_account_counter},
     counter_instructions::{get_counter_increase_instruction, start_new_counter, CounterData},
     rollback_tests::mine_block,
-    ELF_PATH,
+    AUTHORITY_FILE_PATH, ELF_PATH, PROGRAM_FILE_PATH,
 };
 use arch_program::sanitized::ArchMessage;
 
 use arch_sdk::{
     build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
-    Status,
+    ProgramDeployer, Status,
 };
-use arch_test_sdk::{
-    constants::{
-        BITCOIN_NETWORK, BITCOIN_NODE_ENDPOINT, BITCOIN_NODE_PASSWORD, BITCOIN_NODE_USERNAME,
-        PROGRAM_AUTHORITY_FILE_PATH, PROGRAM_FILE_PATH,
-    },
-    helper::{deploy_program, read_account_info, send_transactions_and_wait},
-    logging::{init_logging, log_scenario_end, log_scenario_start},
-};
+
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use serial_test::serial;
 
@@ -27,44 +20,43 @@ use serial_test::serial;
 #[serial]
 #[test]
 fn counter_initialization_test() {
-    init_logging();
-
-    log_scenario_start(1,
-        "Program Deployment & Counter Initialization",
-        "Happy Path Scenario : deploying the counter program, then initializing the counter to (1,1) "
+    println!("Program Deployment & Counter Initialization",);
+    println!("Happy Path Scenario : deploying the counter program, then initializing the counter to (1,1) "
     );
 
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, _) = with_secret_key_file(PROGRAM_AUTHORITY_FILE_PATH)
-        .expect("getting caller info should not fail");
+    let (authority_keypair, _) =
+        with_secret_key_file(AUTHORITY_FILE_PATH).expect("getting caller info should not fail");
+
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
     client
         .create_and_fund_account_with_faucet(&authority_keypair)
         .unwrap();
 
-    let program_pubkey = deploy_program(
-        "E2E-Counter".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
+    let deployer = ProgramDeployer::new(&config);
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "E2E-Counter".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
     start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
-
-    log_scenario_end(1, "");
 }
 
 #[ignore]
 #[serial]
 #[test]
 fn counter_init_and_inc_test() {
-    init_logging();
-
-    log_scenario_start(2,
+    println!(
         "Counter Initialization and Increase ( Two overlapping states, in two separate blocks )",
+    );
+    println!(
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it in a separate block "
     );
 
@@ -74,26 +66,28 @@ fn counter_init_and_inc_test() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
         .create_and_fund_account_with_faucet(&authority_keypair)
         .unwrap();
 
-    let account_info = read_account_info(authority_pubkey);
+    let account_info = client.read_account_info(authority_pubkey).unwrap();
 
     println!(
         "authority lamports after funding {:?}",
         account_info.lamports
     );
+    let deployer = ProgramDeployer::new(&config);
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "E2E-Counter".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
-    let program_pubkey = deploy_program(
-        "E2E-Counter".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
-
-    let account_info = read_account_info(authority_pubkey);
+    let account_info = client.read_account_info(authority_pubkey).unwrap();
 
     println!(
         "authority lamports after deploying {:?}",
@@ -105,7 +99,7 @@ fn counter_init_and_inc_test() {
     let (account_pubkey, account_keypair) =
         start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
 
-    let account_info = read_account_info(authority_pubkey);
+    let account_info = client.read_account_info(authority_pubkey).unwrap();
 
     println!(
         "authority lamports after initializing counter {:?}",
@@ -129,27 +123,26 @@ fn counter_init_and_inc_test() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let _block_transactions = send_transactions_and_wait(vec![transaction]);
+    let txid = client.send_transaction(transaction).unwrap();
+    let _block_transaction = client.wait_for_processed_transaction(&txid).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
     assert_eq!(final_account_data, CounterData::new(2, 1));
-
-    log_scenario_end(2, &format!("{:?}", final_account_data));
 }
 
 #[ignore]
 #[serial]
 #[test]
 fn counter_init_and_inc_transaction_test() {
-    init_logging();
-
-    log_scenario_start(3,
+    println!(
         "Counter Initialization and Increase ( Two overlapping states, in the same transaction )",
+    );
+    println!(
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same transaction, using two separate instructions"
     );
 
@@ -159,17 +152,19 @@ fn counter_init_and_inc_transaction_test() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
         .create_and_fund_account_with_faucet(&authority_keypair)
         .unwrap();
-
-    let program_pubkey = deploy_program(
-        "E2E-Counter".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
+    let deployer = ProgramDeployer::new(&config);
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "E2E-Counter".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
     let (account_pubkey, account_keypair) =
         start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
@@ -201,27 +196,24 @@ fn counter_init_and_inc_transaction_test() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let _block_transactions = send_transactions_and_wait(vec![transaction]);
+    let txid = client.send_transaction(transaction).unwrap();
+    let _block_transaction = client.wait_for_processed_transaction(&txid).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
     assert_eq!(final_account_data, CounterData::new(3, 1));
-
-    log_scenario_end(3, &format!("{:?}", final_account_data));
 }
 
 #[ignore]
 #[serial]
 #[test]
 fn counter_init_and_inc_block_test() {
-    init_logging();
-
-    log_scenario_start(4,
-        "Counter Initialization and Increase ( Two overlapping states, in the same block )",
+    println!("Counter Initialization and Increase ( Two overlapping states, in the same block )",);
+    println!(
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it twice in the same block, using two separate transactions"
     );
 
@@ -231,17 +223,20 @@ fn counter_init_and_inc_block_test() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
         .create_and_fund_account_with_faucet(&authority_keypair)
         .unwrap();
 
-    let program_pubkey = deploy_program(
-        "E2E-Counter".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
+    let deployer = ProgramDeployer::new(&config);
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "E2E-Counter".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
     let (account_pubkey, account_keypair) =
         start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
@@ -263,7 +258,7 @@ fn counter_init_and_inc_block_test() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
@@ -284,7 +279,7 @@ fn counter_init_and_inc_block_test() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
@@ -293,24 +288,23 @@ fn counter_init_and_inc_block_test() {
         first_transaction.txid(),
         second_transaction.txid()
     );
-    let _block_transactions =
-        send_transactions_and_wait(vec![first_transaction, second_transaction]);
+
+    let txids = client
+        .send_transactions(vec![first_transaction, second_transaction])
+        .unwrap();
+    let _block_transactions = client.wait_for_processed_transactions(txids).unwrap();
 
     let final_account_data = get_account_counter(&account_pubkey).unwrap();
 
     assert_eq!(final_account_data, CounterData::new(3, 1));
-
-    log_scenario_end(4, &format!("{:?}", final_account_data));
 }
 
 #[ignore]
 #[serial]
 #[test]
 fn counter_init_and_inc_anchored() {
-    init_logging();
-
-    log_scenario_start(15,
-        "Counter Initialization and Increase ( 1 Anchored Instruction )",
+    println!("Counter Initialization and Increase ( 1 Anchored Instruction )",);
+    println!(
         "Happy Path Scenario : Initializing the counter to (1,1), then increasing it with a Bitcoin Transaction Anchoring"
     );
 
@@ -320,17 +314,21 @@ fn counter_init_and_inc_anchored() {
     let (program_keypair, _) =
         with_secret_key_file(PROGRAM_FILE_PATH).expect("getting caller info should not fail");
 
-    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
         .create_and_fund_account_with_faucet(&authority_keypair)
         .unwrap();
 
-    let program_pubkey = deploy_program(
-        "E2E-Counter".to_string(),
-        ELF_PATH.to_string(),
-        program_keypair,
-        authority_keypair,
-    );
+    let deployer = ProgramDeployer::new(&config);
+
+    let program_pubkey = deployer
+        .try_deploy_program(
+            "E2E-Counter".to_string(),
+            program_keypair,
+            authority_keypair,
+            &ELF_PATH.to_string(),
+        )
+        .unwrap();
 
     let (account_pubkey, account_keypair) =
         start_new_counter(&program_pubkey, 1, 1, &authority_keypair).unwrap();
@@ -359,46 +357,34 @@ fn counter_init_and_inc_anchored() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let processed_transactions = send_transactions_and_wait(vec![transaction]);
+    let txid = client.send_transaction(transaction).unwrap();
+    let processed_transaction = client.wait_for_processed_transaction(&txid).unwrap();
 
     println!(
         "Processed transaction id : {}",
-        processed_transactions[0].runtime_transaction.txid()
+        processed_transaction.runtime_transaction.txid()
     );
 
-    println!(
-        "Transaction status : {:?}",
-        processed_transactions[0].status
-    );
+    println!("Transaction status : {:?}", processed_transaction.status);
 
     assert!(!matches!(
-        processed_transactions[0].status,
+        processed_transaction.status,
         Status::Failed { .. }
     ));
 
-    assert!(processed_transactions[0].bitcoin_txid.is_some());
+    assert!(processed_transaction.bitcoin_txid.is_some());
 
-    let userpass = Auth::UserPass(
-        BITCOIN_NODE_USERNAME.to_string(),
-        BITCOIN_NODE_PASSWORD.to_string(),
-    );
+    let userpass = Auth::UserPass(config.node_username, config.node_password);
     let rpc =
-        Client::new(BITCOIN_NODE_ENDPOINT, userpass).expect("rpc shouldn not fail to be initiated");
-    println!(
-        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
-        arch_test_sdk::constants::get_explorer_tx_url(
-            BITCOIN_NETWORK,
-            &processed_transactions[0].bitcoin_txid.unwrap().to_string()
-        )
-    );
+        Client::new(&config.node_endpoint, userpass).expect("rpc shouldn not fail to be initiated");
 
     let _tx_info = rpc
         .get_raw_transaction_info(
-            &bitcoin::Txid::from_str(&processed_transactions[0].bitcoin_txid.unwrap().to_string())
+            &bitcoin::Txid::from_str(&processed_transaction.bitcoin_txid.unwrap().to_string())
                 .unwrap(),
             None,
         )
@@ -425,42 +411,32 @@ fn counter_init_and_inc_anchored() {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![second_account_keypair, authority_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let second_processed_transactions = send_transactions_and_wait(vec![second_transaction]);
+    let txid = client.send_transaction(second_transaction).unwrap();
+    let second_processed_transaction = client.wait_for_processed_transaction(&txid).unwrap();
 
     println!(
         "Processed transaction id : {}",
-        second_processed_transactions[0].runtime_transaction.txid()
+        second_processed_transaction.runtime_transaction.txid()
     );
 
     println!(
         "Transaction status : {:?}",
-        second_processed_transactions[0].status
+        second_processed_transaction.status
     );
 
     assert!(!matches!(
-        second_processed_transactions[0].status,
+        second_processed_transaction.status,
         Status::Failed { .. }
     ));
-
-    println!(
-        "\x1b[1m\x1B[34m First Bitcoin transaction submitted :  : {} \x1b[0m",
-        arch_test_sdk::constants::get_explorer_tx_url(
-            BITCOIN_NETWORK,
-            &second_processed_transactions[0]
-                .bitcoin_txid
-                .unwrap()
-                .to_string()
-        )
-    );
 
     let _tx_info = rpc
         .get_raw_transaction_info(
             &bitcoin::Txid::from_str(
-                &second_processed_transactions[0]
+                &second_processed_transaction
                     .bitcoin_txid
                     .unwrap()
                     .to_string(),
@@ -469,6 +445,4 @@ fn counter_init_and_inc_anchored() {
             None,
         )
         .unwrap();
-
-    log_scenario_end(15, &format!("{:?}", final_account_data));
 }

@@ -1,8 +1,7 @@
 use anyhow::{anyhow, Result};
 use arch_program::pubkey::Pubkey;
 use arch_program::utxo::UtxoMeta;
-use arch_test_sdk::constants::BITCOIN_NETWORK;
-use arch_test_sdk::helper::{prepare_fees, read_account_info, send_utxo};
+use arch_sdk::{prepare_fees, ArchRpcClient, BitcoinHelper, Config};
 use bitcoin::key::{Secp256k1, UntweakedKeypair};
 use bitcoin::{Address, XOnlyPublicKey};
 use borsh::BorshDeserialize;
@@ -66,7 +65,7 @@ pub fn generate_new_keypair() -> (UntweakedKeypair, Pubkey, Address) {
 
     let (x_only_public_key, _parity) = XOnlyPublicKey::from_keypair(&key_pair);
 
-    let address = Address::p2tr(&secp, x_only_public_key, None, BITCOIN_NETWORK);
+    let address = Address::p2tr(&secp, x_only_public_key, None, Config::localnet().network);
 
     let pubkey = Pubkey::from_slice(&XOnlyPublicKey::from_keypair(&key_pair).0.serialize());
 
@@ -74,7 +73,10 @@ pub fn generate_new_keypair() -> (UntweakedKeypair, Pubkey, Address) {
 }
 
 pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData> {
-    let account_info = read_account_info(*account_pubkey);
+    let config = Config::localnet();
+    let client = ArchRpcClient::new(&config);
+
+    let account_info = client.read_account_info(*account_pubkey).unwrap();
 
     let mut account_info_data = account_info.data.as_slice();
 
@@ -85,7 +87,8 @@ pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData
 }
 
 pub(crate) fn generate_anchoring(account_pubkey: &Pubkey) -> (UtxoMeta, Vec<u8>) {
-    let (utxo_txid, utxo_vout) = send_utxo(*account_pubkey);
+    let helper = BitcoinHelper::new(&Config::localnet());
+    let (utxo_txid, utxo_vout) = helper.send_utxo(*account_pubkey).unwrap();
 
     let fees_psbt = prepare_fees();
 

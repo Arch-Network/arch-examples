@@ -10,9 +10,6 @@ mod whitelist_tests {
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
     };
-    use arch_test_sdk::constants::BITCOIN_NETWORK;
-    use arch_test_sdk::helper::{read_account_info, send_transactions_and_wait};
-    use arch_test_sdk::logging::{init_logging, log_scenario_end, log_scenario_start};
     use serial_test::serial;
 
     fn add_validator_to_whitelist(

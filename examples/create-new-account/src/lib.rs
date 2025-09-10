@@ -3,9 +3,10 @@ use arch_program::sanitized::ArchMessage;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
-use arch_sdk::{build_and_sign_transaction, with_secret_key_file, ArchRpcClient, Config};
-use arch_test_sdk::constants::BITCOIN_NETWORK;
-use arch_test_sdk::helper::{prepare_fees, send_transactions_and_wait, send_utxo};
+use arch_sdk::{
+    build_and_sign_transaction, prepare_fees, with_secret_key_file, ArchRpcClient, BitcoinHelper,
+    Config,
+};
 use borsh::BorshSerialize;
 
 #[derive(BorshSerialize)]
@@ -35,7 +36,8 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
 
     // Step 1: Create and send a UTXO (Unspent Transaction Output) to the new account
     // This UTXO will be used to fund the account creation
-    let (txid, vout) = send_utxo(account_pubkey);
+    let helper = BitcoinHelper::new(&config);
+    let (txid, vout) = helper.send_utxo(account_pubkey).unwrap();
     println!(
         "UTXO created - txid: {}, vout: {}, pubkey: {}",
         txid,
@@ -78,16 +80,17 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![account_keypair, payer_keypair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let block_transactions = send_transactions_and_wait(vec![transaction]);
+    let txid = client.send_transaction(transaction).unwrap();
+    let block_transactions = client.wait_for_processed_transaction(&txid).unwrap();
 
     // Step 6: Confirm successful account creation
     println!(
         "Account created successfully with transaction: {:?}",
-        block_transactions[0]
+        block_transactions
     );
     Ok(())
 }

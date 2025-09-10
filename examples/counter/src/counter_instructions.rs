@@ -6,9 +6,9 @@ use arch_program::sanitized::ArchMessage;
 use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
-use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config};
-use arch_test_sdk::constants::BITCOIN_NETWORK;
-use arch_test_sdk::helper::{read_account_info, send_transactions_and_wait, send_utxo};
+use arch_sdk::{
+    build_and_sign_transaction, generate_new_keypair, ArchRpcClient, BitcoinHelper, Config,
+};
 use bitcoin::key::Keypair;
 use bitcoin::XOnlyPublicKey;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -31,16 +31,18 @@ pub(crate) fn start_new_counter(
             .serialize(),
     );
 
-    let (account_key_pair, account_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+    let (account_key_pair, account_pubkey, _) = generate_new_keypair(config.network);
 
-    let (txid, vout) = send_utxo(account_pubkey);
+    let helper = BitcoinHelper::new(&config);
+
+    let (txid, vout) = helper.send_utxo(account_pubkey).unwrap();
 
     println!(
         "\x1b[32m Step 1/3 Successful :\x1b[0m Account created with address, {:?}",
         account_pubkey.0
     );
 
-    let txid = build_and_sign_transaction(
+    let tx = build_and_sign_transaction(
         ArchMessage::new(
             &[system_instruction::create_account_with_anchor(
                 &fee_payer_pubkey,
@@ -56,11 +58,13 @@ pub(crate) fn start_new_counter(
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![*fee_payer_keypair, account_key_pair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let processed_tx = send_transactions_and_wait(vec![txid]);
+    let txid = client.send_transaction(tx).unwrap();
+
+    let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
 
     println!(
         "processed_tx for creating account : {:?} \n\n",
@@ -78,7 +82,7 @@ pub(crate) fn start_new_counter(
     })
     .unwrap();
 
-    let txid = build_and_sign_transaction(
+    let tx = build_and_sign_transaction(
         ArchMessage::new(
             &[arch_program::instruction::Instruction {
                 program_id: *program_pubkey,
@@ -96,15 +100,17 @@ pub(crate) fn start_new_counter(
             client.get_best_finalized_block_hash().unwrap(),
         ),
         vec![*fee_payer_keypair, account_key_pair],
-        BITCOIN_NETWORK,
+        config.network,
     )
     .expect("Failed to build and sign transaction");
 
-    let processed_tx = send_transactions_and_wait(vec![txid]);
+    let txid = client.send_transaction(tx).unwrap();
+
+    let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
 
     println!("processed_tx: {:?}", processed_tx);
 
-    let account_info = read_account_info(account_pubkey);
+    let account_info = client.read_account_info(account_pubkey).unwrap();
 
     let mut account_info_data = account_info.data.as_slice();
 

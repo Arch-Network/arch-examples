@@ -97,7 +97,7 @@ mod tests {
 
         // println!(
         //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-        //     arch_sdk::get_explorer_address_url(&config.network, &address.to_string())
+        //    "https://mempool.dev.aws.archnetwork.xyz/address/http://localhost:9002/"
         // );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
@@ -225,7 +225,7 @@ mod tests {
 
         // println!(
         //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-        //     arch_sdk::get_explorer_address_url(&config.network, &address.to_string())
+        //    "https://mempool.dev.aws.archnetwork.xyz/address/http://localhost:9002/"
         // );
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */

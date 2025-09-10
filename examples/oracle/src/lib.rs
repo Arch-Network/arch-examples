@@ -5,7 +5,6 @@ mod tests {
         account::AccountMeta, instruction::Instruction, pubkey::Pubkey,
         system_instruction::SystemInstruction, utxo::UtxoMeta,
     };
-    use arch_test_sdk::constants::BITCOIN_NETWORK;
     use bitcoincore_rpc::{Auth, Client};
     use common::constants::*;
 
