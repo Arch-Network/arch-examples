@@ -1,0 +1,10 @@
+[package]
+name = "test-sol-log-data"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+arch_program = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "lib"]
