@@ -8,10 +8,8 @@ pub(crate) mod shared_validator_state_tests {
             instruction::initialize_shared_validator_account, validator_state::SharedValidatorState,
         },
     };
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Status};
-    use arch_test_sdk::{
-        constants::BITCOIN_NETWORK,
-        helper::{read_account_info, send_transactions_and_wait},
+    use arch_sdk::{
+        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
     };
 
     use crate::utils::get_bootnode_keypair_from_file;
@@ -19,7 +17,9 @@ pub(crate) mod shared_validator_state_tests {
     pub(crate) fn try_to_initialize_shared_validator_account(client: &ArchRpcClient) {
         let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);
 
-        let account_info = read_account_info(shared_validator_account_pubkey);
+        let account_info = client
+            .read_account_info(shared_validator_account_pubkey)
+            .unwrap();
 
         match account_info.data.is_empty() {
             false => {
@@ -33,7 +33,8 @@ pub(crate) mod shared_validator_state_tests {
             }
             true => {
                 println!("Shared validator account does not exist, initializing it !");
-                let (user_keypair, user_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+                let (user_keypair, user_pubkey, _) =
+                    generate_new_keypair(Config::localnet().network);
                 client
                     .create_and_fund_account_with_faucet(&user_keypair)
                     .unwrap();
@@ -82,15 +83,18 @@ pub(crate) mod shared_validator_state_tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*user_keypair],
-            BITCOIN_NETWORK,
+            Config::localnet().network,
         )
         .expect("Failed to build and sign transaction");
+        let txid = client.send_transaction(tx).unwrap();
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        assert_eq!(processed_txs[0].status, Status::Processed);
+        assert_eq!(processed_txs.status, Status::Processed);
 
-        let account_info = read_account_info(shared_validator_account_pubkey);
+        let account_info = client
+            .read_account_info(shared_validator_account_pubkey)
+            .unwrap();
         let shared_validator_account =
             bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 

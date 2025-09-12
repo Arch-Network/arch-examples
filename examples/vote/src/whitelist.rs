@@ -47,14 +47,16 @@ mod whitelist_tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*signing_keypair],
-            BITCOIN_NETWORK,
+            Config::localnet().network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
+
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
         println!("\x1b[32m Step 2/3 Successful:\x1b[0m Whitelist addition transaction sent");
 
-        let account_info = read_account_info(shared_validator_pubkey);
+        let account_info = client.read_account_info(shared_validator_pubkey).unwrap();
 
         let shared_validator_state =
             bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
@@ -63,7 +65,7 @@ mod whitelist_tests {
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"
         );
 
-        (shared_validator_state, processed_txs[0].txid())
+        (shared_validator_state, processed_txs.txid())
     }
 
     fn remove_validator_from_whitelist(
@@ -101,14 +103,16 @@ mod whitelist_tests {
                 client.get_best_finalized_block_hash().unwrap(),
             ),
             vec![*signing_keypair],
-            BITCOIN_NETWORK,
+            Config::localnet().network,
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
+
         println!("\x1b[32m Step 2/3 Successful:\x1b[0m Whitelist addition transaction sent");
 
-        let account_info = read_account_info(shared_validator_pubkey);
+        let account_info = client.read_account_info(shared_validator_pubkey).unwrap();
 
         let shared_validator_state =
             bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
@@ -117,26 +121,21 @@ mod whitelist_tests {
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"
         );
 
-        (shared_validator_state, processed_txs[0].txid())
+        (shared_validator_state, processed_txs.txid())
     }
     #[ignore]
     #[serial]
     #[test]
     fn test_add_validator_to_whitelist() {
-        init_logging();
-
-        log_scenario_start(
-            1,
-            "Adding Validator to Whitelist",
-            "Happy Path Scenario : adding a validator to the whitelist",
-        );
+        println!("Adding Validator to Whitelist",);
+        println!("Happy Path Scenario : adding a validator to the whitelist",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (_, validator_pubkey, _) = generate_new_keypair(BITCOIN_NETWORK);
+        let (_, validator_pubkey, _) = generate_new_keypair(config.network);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
@@ -149,21 +148,14 @@ mod whitelist_tests {
                 .contains(&validator_pubkey),
             "Validator not found in whitelist"
         );
-
-        log_scenario_end(1, &format!("{:?}", resulting_shared_account));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_add_multiple_validators_to_whitelist() {
-        init_logging();
-
-        log_scenario_start(
-            2,
-            "Adding Multiple Validators to Whitelist",
-            "Happy Path Scenario : adding multiple validators to the whitelist",
-        );
+        println!("Adding Multiple Validators to Whitelist",);
+        println!("Happy Path Scenario : adding multiple validators to the whitelist",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -202,21 +194,14 @@ mod whitelist_tests {
                 .contains(&validator3_pubkey),
             "Validator not found in whitelist"
         );
-
-        log_scenario_end(2, &format!("{:?}", resulting_shared_account));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_adding_same_validator_multiple_times() {
-        init_logging();
-
-        log_scenario_start(
-            3,
-            "Adding Same Validator Multiple Times",
-            "Happy Path Scenario : adding same validator multiple times",
-        );
+        println!("Adding Same Validator Multiple Times",);
+        println!("Happy Path Scenario : adding same validator multiple times",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -250,19 +235,14 @@ mod whitelist_tests {
         );
 
         assert_eq!(resulting_state_1, resulting_state_2,);
-
-        log_scenario_end(3, &format!("{:?}", resulting_state_2));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_adding_validator_to_whitelist_with_invalid_bootnode() {
-        init_logging();
-
-        log_scenario_start(
-            4,
-            "Adding Validator to Whitelist with Invalid Signing pair ( NOT BOOTNODE )",
+        println!("Adding Validator to Whitelist with Invalid Signing pair ( NOT BOOTNODE )",);
+        println!(
             "Happy Path Scenario : adding a validator to the whitelist with an invalid bootnode",
         );
 
@@ -289,20 +269,14 @@ mod whitelist_tests {
         assert!(!resulting_shared_account
             .whitelist
             .contains(&validator_pubkey));
-
-        log_scenario_end(4, &format!("{:?}", resulting_shared_account));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_remove_validator_from_whitelist() {
-        init_logging();
-        log_scenario_start(
-            5,
-            "Removing Validator from Whitelist",
-            "Happy Path Scenario : removing a validator from the whitelist",
-        );
+        println!("Removing Validator from Whitelist",);
+        println!("Happy Path Scenario : removing a validator from the whitelist",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -321,20 +295,14 @@ mod whitelist_tests {
                 .contains(&validator_pubkey),
             "Validator still found in whitelist"
         );
-
-        log_scenario_end(5, &format!("{:?}", resulting_shared_account));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_remove_multiple_validators_from_whitelist() {
-        init_logging();
-        log_scenario_start(
-            6,
-            "Removing Multiple Validators from Whitelist",
-            "Happy Path Scenario : removing multiple validators from the whitelist",
-        );
+        println!("Removing Multiple Validators from Whitelist",);
+        println!("Happy Path Scenario : removing multiple validators from the whitelist",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -363,20 +331,14 @@ mod whitelist_tests {
         assert!(!resulting_shared_account
             .whitelist
             .contains(&validator3_pubkey));
-
-        log_scenario_end(6, &format!("{:?}", resulting_shared_account));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_removing_same_validator_multiple_times() {
-        init_logging();
-        log_scenario_start(
-            7,
-            "Removing Same Validator Multiple Times",
-            "Happy Path Scenario : removing same validator multiple times",
-        );
+        println!("Removing Same Validator Multiple Times",);
+        println!("Happy Path Scenario : removing same validator multiple times",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -404,20 +366,14 @@ mod whitelist_tests {
         assert!(matches!(processed_transaction_2.status, Status::Failed(_)));
         assert!(!resulting_state_1.whitelist.contains(&validator1_pubkey));
         assert_eq!(resulting_state_1, resulting_state_2);
-
-        log_scenario_end(7, &format!("{:?}", resulting_state_2));
     }
 
     #[ignore]
     #[serial]
     #[test]
     fn test_removing_validator_from_whitelist_with_invalid_bootnode() {
-        init_logging();
-        log_scenario_start(
-            8,
-            "Removing Validator from Whitelist with Invalid Signing pair",
-            "Happy Path Scenario : removing a validator with an invalid bootnode",
-        );
+        println!("Removing Validator from Whitelist with Invalid Signing pair",);
+        println!("Happy Path Scenario : removing a validator with an invalid bootnode",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -439,7 +395,5 @@ mod whitelist_tests {
         assert!(resulting_shared_account
             .whitelist
             .contains(&validator_pubkey));
-
-        log_scenario_end(8, &format!("{:?}", resulting_shared_account));
     }
 }

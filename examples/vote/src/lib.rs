@@ -17,10 +17,7 @@ mod tests {
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
     };
-    use arch_test_sdk::{
-        helper::{read_account_info, send_transactions_and_wait, try_read_account_info},
-        logging::{init_logging, log_scenario_end, log_scenario_start},
-    };
+
     use serial_test::serial;
 
     use crate::utils::get_peer_keypair_from_file;
@@ -29,13 +26,8 @@ mod tests {
     #[serial]
     #[test]
     fn test_vote_initialize() {
-        init_logging();
-
-        log_scenario_start(
-            1,
-            "Vote Account Initialization",
-            "Happy Path Scenario : creating and initializing the vote account",
-        );
+        println!("Vote Account Initialization",);
+        println!("Happy Path Scenario : creating and initializing the vote account",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -57,7 +49,6 @@ mod tests {
             &node_pubkey,
             &authority_pubkey,
         );
-        log_scenario_end(1, "");
     }
 
     pub(crate) fn initialize_vote_account(
@@ -85,11 +76,12 @@ mod tests {
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        assert_eq!(processed_txs[0].status, Status::Processed);
+        assert_eq!(processed_txs.status, Status::Processed);
 
-        let account_info = read_account_info(*vote_pubkey);
+        let account_info = client.read_account_info(*vote_pubkey).unwrap();
         let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
@@ -103,13 +95,8 @@ mod tests {
     #[serial]
     #[test]
     fn test_vote_authorize() {
-        init_logging();
-
-        log_scenario_start(
-            1,
-            "Vote Account Authorization",
-            "Happy Path Scenario : authorizing the vote account",
-        );
+        println!("Vote Account Authorization",);
+        println!("Happy Path Scenario : authorizing the vote account",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -147,12 +134,13 @@ mod tests {
             config.network,
         )
         .expect("Failed to build and sign transaction");
+        let txid = client.send_transaction(tx).unwrap();
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        println!("Processed tx: {:?}", processed_txs);
 
-        let account_info = read_account_info(vote_pubkey);
+        let account_info = client.read_account_info(vote_pubkey).unwrap();
         let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
@@ -163,13 +151,8 @@ mod tests {
     #[serial]
     #[test]
     fn test_vote_update_commission() {
-        init_logging();
-
-        log_scenario_start(
-            1,
-            "Vote Account Update Commission",
-            "Happy Path Scenario : updating the commission of the vote account",
-        );
+        println!("Vote Account Update Commission",);
+        println!("Happy Path Scenario : updating the commission of the vote account",);
 
         let config = Config::localnet();
         let client = ArchRpcClient::new(&config);
@@ -207,11 +190,13 @@ mod tests {
         )
         .expect("Failed to build and sign transaction");
 
-        let processed_txs = send_transactions_and_wait(vec![tx]);
+        let txid = client.send_transaction(tx).unwrap();
 
-        println!("Processed tx: {:?}", processed_txs[0]);
+        let processed_txs = client.wait_for_processed_transaction(&txid).unwrap();
 
-        let account_info = read_account_info(vote_pubkey);
+        println!("Processed tx: {:?}", processed_txs);
+
+        let account_info = client.read_account_info(vote_pubkey).unwrap();
         let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
@@ -222,11 +207,8 @@ mod tests {
     #[serial]
     #[test]
     fn try_create_vote_account_for_whitelisted_peer() {
-        init_logging();
-
-        log_scenario_start(
-            1,
-            "Vote Account Creation for a whitelisted peer",
+        println!("Vote Account Creation for a whitelisted peer",);
+        println!(
             "Happy Path Scenario : creating and initializing vote account for a whitelisted peer",
         );
 
@@ -243,14 +225,14 @@ mod tests {
         let serialized_node_pubkey = node_keypair.public_key().x_only_public_key().0.serialize();
         let node_pubkey = Pubkey::from_slice(&serialized_node_pubkey);
 
-        match try_read_account_info(node_pubkey) {
-            Some(account_info) => {
+        match client.read_account_info(node_pubkey) {
+            Ok(account_info) => {
                 let vote_account =
                     bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
 
                 println!("Vote state already initialized ! {:?}", vote_account);
             }
-            None => {
+            Err(_) => {
                 println!("Vote state not initialized !");
 
                 initialize_vote_account(
@@ -263,7 +245,7 @@ mod tests {
                     &node_pubkey,
                 );
 
-                assert!(try_read_account_info(vote_pubkey).is_some());
+                assert!(client.read_account_info(vote_pubkey).is_ok());
             }
         }
     }
