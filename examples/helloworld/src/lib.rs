@@ -30,7 +30,7 @@ mod tests {
         let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
-            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
 
         let (authority_keypair, _, _) = generate_new_keypair(config.network);
 
@@ -69,7 +69,7 @@ mod tests {
         let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
-            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
 
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         client
@@ -195,7 +195,7 @@ mod tests {
         let client = ArchRpcClient::new(&config);
 
         let (program_keypair, _) =
-            with_secret_key_file(&".program.json").expect("getting caller info should not fail");
+            with_secret_key_file(".program.json").expect("getting caller info should not fail");
 
         let (authority_keypair, authority_pubkey) =
             with_secret_key_file(".caller.json").expect("getting caller info should not fail");

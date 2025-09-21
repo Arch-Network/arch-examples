@@ -190,7 +190,7 @@ fn single_utxo_rbf_two_accounts() {
         &first_authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(2500),
     );
 
@@ -347,7 +347,7 @@ fn single_utxo_rbf_three_accounts() {
         &first_authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(5000),
     );
 
@@ -388,7 +388,7 @@ fn single_utxo_rbf_three_accounts() {
         &second_authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(2500),
     );
 
@@ -536,7 +536,7 @@ fn rbf_orphan_arch_txs() {
         &first_authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(2500),
     );
 
@@ -731,7 +731,7 @@ fn rbf_reorg() {
         &first_authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(2500),
     );
 

@@ -346,7 +346,7 @@ fn counter_init_and_inc_anchored() {
         &authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         Some(2500),
     );
 

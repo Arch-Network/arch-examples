@@ -51,7 +51,7 @@ fn test_intra_block_tx_cache() {
         &authority_pubkey,
         false,
         false,
-        Some((anchoring.0.clone(), anchoring.1.clone(), false)),
+        Some((anchoring.0, anchoring.1.clone(), false)),
         None,
     );
 
@@ -61,11 +61,7 @@ fn test_intra_block_tx_cache() {
         &authority_pubkey,
         false,
         false,
-        Some((
-            second_anchoring.0.clone(),
-            second_anchoring.1.clone(),
-            false,
-        )),
+        Some((second_anchoring.0, second_anchoring.1.clone(), false)),
         None,
     );
 
