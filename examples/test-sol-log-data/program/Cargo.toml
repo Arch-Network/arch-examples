@@ -1,11 +1,10 @@
 [package]
-name = "clock_program"
+name = "test-sol-log-data-program"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 arch_program = "0.5.12"
-borsh = { version = "1.5.1", features = ["derive"] }
 
 [lib]
 crate-type = ["cdylib", "lib"]
