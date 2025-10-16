@@ -15,7 +15,8 @@ mod tests {
         },
     };
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
+        build_and_sign_transaction, generate_new_keypair, is_parity_even, ArchRpcClient, Config,
+        Status,
     };
 
     use serial_test::serial;
@@ -37,7 +38,7 @@ mod tests {
             .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
         let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
-        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (node_keypair, node_pubkey, _) = generate_new_keypair(config.network);
         let (_, authority_pubkey, _) = generate_new_keypair(config.network);
 
         initialize_vote_account(
@@ -46,6 +47,7 @@ mod tests {
             &user_keypair,
             &vote_pubkey,
             &vote_keypair,
+            &node_keypair,
             &node_pubkey,
             &authority_pubkey,
         );
@@ -57,6 +59,7 @@ mod tests {
         user_keypair: &Keypair,
         vote_pubkey: &Pubkey,
         vote_keypair: &Keypair,
+        node_keypair: &Keypair,
         node_pubkey: &Pubkey,
         authority_pubkey: &Pubkey,
     ) {
@@ -65,7 +68,12 @@ mod tests {
                 &vote::instruction::create_account(
                     user_pubkey,
                     vote_pubkey,
-                    &VoteInit::new(*node_pubkey, *authority_pubkey, 0),
+                    &VoteInit::new(
+                        *node_pubkey,
+                        is_parity_even(node_keypair),
+                        *authority_pubkey,
+                        0,
+                    ),
                     minimum_rent(VoteState::size_of_new()),
                 ),
                 Some(*user_pubkey),
@@ -87,7 +95,12 @@ mod tests {
 
         assert_eq!(
             vote_account,
-            VoteState::new(&VoteInit::new(*node_pubkey, *authority_pubkey, 0))
+            VoteState::new(&VoteInit::new(
+                *node_pubkey,
+                is_parity_even(node_keypair),
+                *authority_pubkey,
+                0
+            ))
         );
     }
 
@@ -106,7 +119,7 @@ mod tests {
             .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
         let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
-        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (node_keypair, node_pubkey, _) = generate_new_keypair(config.network);
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         let (_, new_authority_pubkey, _) = generate_new_keypair(config.network);
 
@@ -116,6 +129,7 @@ mod tests {
             &user_keypair,
             &vote_pubkey,
             &vote_keypair,
+            &node_keypair,
             &node_pubkey,
             &authority_pubkey,
         );
@@ -162,7 +176,7 @@ mod tests {
             .create_and_fund_account_with_faucet(&user_keypair)
             .unwrap();
         let (vote_keypair, vote_pubkey, _) = generate_new_keypair(config.network);
-        let (_, node_pubkey, _) = generate_new_keypair(config.network);
+        let (node_keypair, node_pubkey, _) = generate_new_keypair(config.network);
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
 
         initialize_vote_account(
@@ -171,6 +185,7 @@ mod tests {
             &user_keypair,
             &vote_pubkey,
             &vote_keypair,
+            &node_keypair,
             &node_pubkey,
             &authority_pubkey,
         );
@@ -241,6 +256,7 @@ mod tests {
                     &user_keypair,
                     &vote_pubkey,
                     &vote_keypair,
+                    &node_keypair,
                     &node_pubkey,
                     &node_pubkey,
                 );
