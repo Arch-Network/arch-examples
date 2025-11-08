@@ -5,7 +5,6 @@ use arch_program::{
         TxOut,
     },
     entrypoint,
-    helper::add_state_transition,
     input_to_sign::InputToSign,
     instruction::Instruction,
     msg,

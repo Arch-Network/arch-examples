@@ -1,5 +1,5 @@
 use arch_program::{
-    account::{AccountInfo},
+    account::AccountInfo,
     bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
     entrypoint,
     helper::add_state_transition,
@@ -8,10 +8,11 @@ use arch_program::{
     program::{invoke, next_account_info, set_transaction_to_sign},
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction,
-    utxo::UtxoMeta,
-    system_program::SYSTEM_PROGRAM_ID,
     rent::minimum_rent,
+    system_instruction,
+    system_instruction::sign_input,
+    system_program::SYSTEM_PROGRAM_ID,
+    utxo::UtxoMeta,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -96,13 +97,17 @@ pub fn process_instruction<'a>(
         input: vec![],
         output: vec![],
     };
+
+    // Add fee payer
+    add_state_transition(&mut tx, payer)?;
+
     // Add state transition and fee information
-    add_state_transition(&mut tx, factory_state_account);
+    add_state_transition(&mut tx, factory_state_account)?;
     tx.input.push(fees_tx.input[0].clone());
 
     // Create the transaction signing request
     let inputs = [InputToSign {
-        index: 0,
+        index: 1,
         signer: factory_state_account.key.clone(),
     }];
 
@@ -115,6 +120,9 @@ pub fn process_instruction<'a>(
 
     // Step 7: Queue the transaction for signing
     set_transaction_to_sign(accounts, &tx, &inputs)?;
+
+    let ix = sign_input(0, payer.key);
+    invoke(&ix, &[payer.clone()])?;
 
     Ok(())
 }

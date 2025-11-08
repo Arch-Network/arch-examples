@@ -1,11 +1,15 @@
+use std::str::FromStr;
+
 use anyhow::Result;
+use arch_program::compute_budget;
 use arch_program::sanitized::ArchMessage;
+use arch_program::system_instruction::anchor;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
 use arch_sdk::{
     build_and_sign_transaction, prepare_fees, with_secret_key_file, ArchRpcClient, BitcoinHelper,
-    Config,
+    Config, Status,
 };
 use borsh::BorshSerialize;
 
@@ -27,12 +31,35 @@ pub struct CreateAccountParams {
 pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
+    let bitcoin_helper = BitcoinHelper::new(&config);
 
     let (account_keypair, account_pubkey) = with_secret_key_file(".test_account.json")?;
     let (payer_keypair, payer_pubkey) = with_secret_key_file(".test_account.json")?;
     client
         .create_and_fund_account_with_faucet(&payer_keypair)
         .unwrap();
+
+    let (utxo_txid, utxo_vout) = bitcoin_helper.send_utxo(payer_pubkey).unwrap();
+    println!(
+        "UTXO created - txid: {}, vout: {}, pubkey: {}",
+        utxo_txid,
+        utxo_vout,
+        hex::encode(payer_pubkey.serialize())
+    );
+
+    let utxo_meta =
+        UtxoMeta::from_outpoint(bitcoin::Txid::from_str(&utxo_txid).unwrap(), utxo_vout);
+    let ix = anchor(&payer_pubkey, utxo_meta.txid_big_endian(), utxo_meta.vout());
+    let message = ArchMessage::new(
+        &[ix],
+        Some(payer_pubkey),
+        client.get_best_finalized_block_hash().unwrap(),
+    );
+    let transaction = build_and_sign_transaction(message, vec![payer_keypair], config.network)
+        .expect("Failed to build and sign transaction");
+    let txid = client.send_transaction(transaction).unwrap();
+    let processed_tx = client.wait_for_processed_transaction(&txid).unwrap();
+    assert_eq!(processed_tx.status, Status::Processed);
 
     // Step 1: Create and send a UTXO (Unspent Transaction Output) to the new account
     // This UTXO will be used to fund the account creation
@@ -75,7 +102,10 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
     // The account_pubkey is included in the signers list as it needs to authorize this action
     let transaction = build_and_sign_transaction(
         ArchMessage::new(
-            &[instruction],
+            &[
+                compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+                instruction,
+            ],
             Some(payer_pubkey),
             client.get_best_finalized_block_hash().unwrap(),
         ),
