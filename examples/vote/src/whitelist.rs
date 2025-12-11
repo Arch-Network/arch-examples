@@ -14,18 +14,16 @@ mod whitelist_tests {
 
     fn add_validator_to_whitelist(
         client: &ArchRpcClient,
-        validator_pubkey: &Pubkey,
+        validator_compressed_pubkey: &[u8; 33],
         signing_keypair: &Keypair,
     ) -> (SharedValidatorState, Hash) {
         // Step 1: Get keypair account
         let shared_validator_pubkey = Pubkey::from_slice(&[2; 32]);
 
-        let signing_keypair_pubkey = signing_keypair
-            .public_key()
-            .x_only_public_key()
-            .0
-            .serialize();
-        let signing_keypair_arch_pubkey = Pubkey::from_slice(&signing_keypair_pubkey);
+        let signing_keypair_compressed_pubkey = signing_keypair.public_key().serialize();
+
+        let signing_keypair_arch_pubkey =
+            Pubkey::from_slice(&signing_keypair_compressed_pubkey[1..33]);
 
         try_to_create_and_fund_account(signing_keypair);
 
@@ -36,8 +34,8 @@ mod whitelist_tests {
 
         let instruction = add_peer_to_whitelist(
             &shared_validator_pubkey,
-            &signing_keypair_arch_pubkey,
-            *validator_pubkey,
+            &signing_keypair_compressed_pubkey,
+            validator_compressed_pubkey,
         );
 
         let tx = build_and_sign_transaction(
@@ -70,18 +68,15 @@ mod whitelist_tests {
 
     fn remove_validator_from_whitelist(
         client: &ArchRpcClient,
-        validator_pubkey: &Pubkey,
+        validator_compressed_pubkey: &[u8; 33],
         signing_keypair: &Keypair,
     ) -> (SharedValidatorState, Hash) {
         // Step 1: Get keypair account
         let shared_validator_pubkey = Pubkey::from_slice(&[2; 32]);
 
-        let signing_keypair_pubkey = signing_keypair
-            .public_key()
-            .x_only_public_key()
-            .0
-            .serialize();
-        let signing_keypair_arch_pubkey = Pubkey::from_slice(&signing_keypair_pubkey);
+        let signing_keypair_compressed_pubkey = signing_keypair.public_key().serialize();
+        let signing_keypair_arch_pubkey =
+            Pubkey::from_slice(&signing_keypair_compressed_pubkey[1..33]);
 
         try_to_create_and_fund_account(signing_keypair);
 
@@ -92,8 +87,8 @@ mod whitelist_tests {
 
         let instruction = remove_peer_from_whitelist(
             &shared_validator_pubkey,
-            &signing_keypair_arch_pubkey,
-            *validator_pubkey,
+            &signing_keypair_compressed_pubkey,
+            validator_compressed_pubkey,
         );
 
         let tx = build_and_sign_transaction(
@@ -135,17 +130,20 @@ mod whitelist_tests {
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (_, validator_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair, _validator_pubkey, _) = generate_new_keypair(config.network);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
-        let (resulting_shared_account, _) =
-            add_validator_to_whitelist(&client, &validator_pubkey, &bootnode_keypair);
+        let (resulting_shared_account, _) = add_validator_to_whitelist(
+            &client,
+            &key_pair.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
         assert!(
             resulting_shared_account
                 .whitelist
-                .contains(&validator_pubkey),
+                .contains(&key_pair.public_key().serialize().to_vec()),
             "Validator not found in whitelist"
         );
     }
@@ -163,35 +161,47 @@ mod whitelist_tests {
         try_to_initialize_shared_validator_account(&client);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
-        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
-        let (_, validator2_pubkey, _) = generate_new_keypair(config.network);
-        let (_, validator3_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair1, _validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair2, _validator2_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair3, _validator3_pubkey, _) = generate_new_keypair(config.network);
 
-        let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
-        let _ = add_validator_to_whitelist(&client, &validator2_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair2.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
-        let resulting_shared_account =
-            add_validator_to_whitelist(&client, &validator3_pubkey, &bootnode_keypair).0;
+        let resulting_shared_account = add_validator_to_whitelist(
+            &client,
+            &key_pair3.public_key().serialize(),
+            &bootnode_keypair,
+        )
+        .0;
 
         assert!(
             resulting_shared_account
                 .whitelist
-                .contains(&validator1_pubkey),
+                .contains(&key_pair1.public_key().serialize().to_vec()),
             "Validator not found in whitelist"
         );
 
         assert!(
             resulting_shared_account
                 .whitelist
-                .contains(&validator2_pubkey),
+                .contains(&key_pair2.public_key().serialize().to_vec()),
             "Validator not found in whitelist"
         );
 
         assert!(
             resulting_shared_account
                 .whitelist
-                .contains(&validator3_pubkey),
+                .contains(&key_pair3.public_key().serialize().to_vec()),
             "Validator not found in whitelist"
         );
     }
@@ -208,14 +218,20 @@ mod whitelist_tests {
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair1, _validator1_pubkey, _) = generate_new_keypair(config.network);
 
         let bootnode_keypair = get_bootnode_keypair_from_file();
-        let (resulting_state_1, arch_txid_1) =
-            add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
+        let (resulting_state_1, arch_txid_1) = add_validator_to_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
-        let (resulting_state_2, arch_txid_2) =
-            add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
+        let (resulting_state_2, arch_txid_2) = add_validator_to_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
         let processed_transaction_1 = client
             .get_processed_transaction(&arch_txid_1)
@@ -230,7 +246,9 @@ mod whitelist_tests {
         assert!(matches!(processed_transaction_2.status, Status::Failed(_)));
 
         assert!(
-            resulting_state_1.whitelist.contains(&validator1_pubkey),
+            resulting_state_1
+                .whitelist
+                .contains(&key_pair1.public_key().serialize().to_vec()),
             "Validator not found in whitelist"
         );
 
@@ -251,10 +269,10 @@ mod whitelist_tests {
 
         try_to_initialize_shared_validator_account(&client);
 
-        let (keypair, validator_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair, _validator_pubkey, _) = generate_new_keypair(config.network);
 
         let (resulting_shared_account, resulting_tx) =
-            add_validator_to_whitelist(&client, &validator_pubkey, &keypair);
+            add_validator_to_whitelist(&client, &key_pair.public_key().serialize(), &key_pair);
 
         let processed_transaction = client
             .get_processed_transaction(&resulting_tx)
@@ -268,7 +286,7 @@ mod whitelist_tests {
         );
         assert!(!resulting_shared_account
             .whitelist
-            .contains(&validator_pubkey));
+            .contains(&key_pair.public_key().serialize().to_vec()));
     }
 
     #[ignore]
@@ -282,17 +300,24 @@ mod whitelist_tests {
         let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (_, validator_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair, _validator_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
-        let _ = add_validator_to_whitelist(&client, &validator_pubkey, &bootnode_keypair);
-        let (resulting_shared_account, _) =
-            remove_validator_from_whitelist(&client, &validator_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let (resulting_shared_account, _) = remove_validator_from_whitelist(
+            &client,
+            &key_pair.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
         assert!(
             !resulting_shared_account
                 .whitelist
-                .contains(&validator_pubkey),
+                .contains(&key_pair.public_key().serialize().to_vec()),
             "Validator still found in whitelist"
         );
     }
@@ -309,28 +334,52 @@ mod whitelist_tests {
 
         try_to_initialize_shared_validator_account(&client);
         let bootnode_keypair = get_bootnode_keypair_from_file();
-        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
-        let (_, validator2_pubkey, _) = generate_new_keypair(config.network);
-        let (_, validator3_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair1, _validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair2, _validator2_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair3, _validator3_pubkey, _) = generate_new_keypair(config.network);
 
-        let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
-        let _ = add_validator_to_whitelist(&client, &validator2_pubkey, &bootnode_keypair);
-        let _ = add_validator_to_whitelist(&client, &validator3_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair2.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair3.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
-        let _ = remove_validator_from_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
-        let _ = remove_validator_from_whitelist(&client, &validator2_pubkey, &bootnode_keypair);
-        let resulting_shared_account =
-            remove_validator_from_whitelist(&client, &validator3_pubkey, &bootnode_keypair).0;
+        let _ = remove_validator_from_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let _ = remove_validator_from_whitelist(
+            &client,
+            &key_pair2.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let resulting_shared_account = remove_validator_from_whitelist(
+            &client,
+            &key_pair3.public_key().serialize(),
+            &bootnode_keypair,
+        )
+        .0;
 
         assert!(!resulting_shared_account
             .whitelist
-            .contains(&validator1_pubkey));
+            .contains(&key_pair1.public_key().serialize().to_vec()));
         assert!(!resulting_shared_account
             .whitelist
-            .contains(&validator2_pubkey));
+            .contains(&key_pair2.public_key().serialize().to_vec()));
         assert!(!resulting_shared_account
             .whitelist
-            .contains(&validator3_pubkey));
+            .contains(&key_pair3.public_key().serialize().to_vec()));
     }
 
     #[ignore]
@@ -344,14 +393,24 @@ mod whitelist_tests {
         let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (_, validator1_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair1, _validator1_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
-        let _ = add_validator_to_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
-        let (resulting_state_1, arch_txid_1) =
-            remove_validator_from_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
-        let (resulting_state_2, arch_txid_2) =
-            remove_validator_from_whitelist(&client, &validator1_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let (resulting_state_1, arch_txid_1) = remove_validator_from_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
+        let (resulting_state_2, arch_txid_2) = remove_validator_from_whitelist(
+            &client,
+            &key_pair1.public_key().serialize(),
+            &bootnode_keypair,
+        );
 
         let processed_transaction_1 = client
             .get_processed_transaction(&arch_txid_1)
@@ -364,7 +423,9 @@ mod whitelist_tests {
 
         assert_eq!(processed_transaction_1.status, Status::Processed);
         assert!(matches!(processed_transaction_2.status, Status::Failed(_)));
-        assert!(!resulting_state_1.whitelist.contains(&validator1_pubkey));
+        assert!(!resulting_state_1
+            .whitelist
+            .contains(&key_pair1.public_key().serialize().to_vec()));
         assert_eq!(resulting_state_1, resulting_state_2);
     }
 
@@ -379,12 +440,16 @@ mod whitelist_tests {
         let client = ArchRpcClient::new(&config);
 
         try_to_initialize_shared_validator_account(&client);
-        let (keypair, validator_pubkey, _) = generate_new_keypair(config.network);
+        let (key_pair, _validator_pubkey, _) = generate_new_keypair(config.network);
         let bootnode_keypair = get_bootnode_keypair_from_file();
 
-        let _ = add_validator_to_whitelist(&client, &validator_pubkey, &bootnode_keypair);
+        let _ = add_validator_to_whitelist(
+            &client,
+            &key_pair.public_key().serialize(),
+            &bootnode_keypair,
+        );
         let (resulting_shared_account, resulting_tx) =
-            remove_validator_from_whitelist(&client, &validator_pubkey, &keypair);
+            remove_validator_from_whitelist(&client, &key_pair.public_key().serialize(), &key_pair);
 
         let processed_transaction = client
             .get_processed_transaction(&resulting_tx)
@@ -394,6 +459,6 @@ mod whitelist_tests {
         assert!(matches!(processed_transaction.status, Status::Failed(_)));
         assert!(resulting_shared_account
             .whitelist
-            .contains(&validator_pubkey));
+            .contains(&key_pair.public_key().serialize().to_vec()));
     }
 }

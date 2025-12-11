@@ -41,17 +41,12 @@ pub(crate) mod shared_validator_state_tests {
 
                 let bootnode_keypair = get_bootnode_keypair_from_file();
 
-                let bootnode_pubkey = bootnode_keypair
-                    .public_key()
-                    .x_only_public_key()
-                    .0
-                    .serialize();
-                let bootnode_arch_pubkey = Pubkey::from_slice(&bootnode_pubkey);
+                let bootnode_compressed_pubkey = bootnode_keypair.public_key().serialize();
                 send_transaction_to_initialize_shared_validator_account(
                     client,
                     &user_keypair,
                     &user_pubkey,
-                    &bootnode_arch_pubkey,
+                    &bootnode_compressed_pubkey,
                     &vec![],
                     &vec![],
                 );
@@ -63,9 +58,9 @@ pub(crate) mod shared_validator_state_tests {
         client: &ArchRpcClient,
         user_keypair: &Keypair,
         user_pubkey: &Pubkey,
-        bootnode_pubkey: &Pubkey,
+        bootnode_pubkey: &[u8; 33],
         serialized_pubkey_package: &Vec<u8>,
-        whitelist: &Vec<Pubkey>,
+        whitelist: &Vec<[u8; 33]>,
     ) {
         let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);
 
@@ -101,9 +96,9 @@ pub(crate) mod shared_validator_state_tests {
         assert_eq!(
             shared_validator_account,
             SharedValidatorState::new(
-                *bootnode_pubkey,
+                bootnode_pubkey.to_vec(),
                 serialized_pubkey_package.to_vec(),
-                whitelist.to_vec(),
+                whitelist.iter().map(|p| p.to_vec()).collect(),
             )
         );
         println!("Successfully initialized shared validator account !");

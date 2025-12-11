@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-arch_program = "0.5.14"
+arch_program = "0.5.15"
 borsh = { version = "1.5.3" }
 
 [lib]
