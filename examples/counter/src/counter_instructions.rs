@@ -124,7 +124,7 @@ pub(crate) fn start_new_counter(
         return Err(anyhow!("Account content after initialization is wrong !"));
     }
 
-    println!("\x1b[32m Step 3/3 Successful :\x1b[0m Counter succesfully initialized \x1b[1m\x1B[34mCounter Data : Step {} ======= Value {}\x1b[0m",account_counter.current_step, account_counter.current_value);
+    println!("\x1b[32m Step 3/3 Successful :\x1b[0m Counter successfully initialized \x1b[1m\x1B[34mCounter Data : Step {} ======= Value {}\x1b[0m",account_counter.current_step, account_counter.current_value);
 
     //print_title("COUNTER INITIALIZATION : OK !", 5);
 
