@@ -1,7 +1,6 @@
-use anyhow::{anyhow, Result};
 use arch_program::pubkey::Pubkey;
 use arch_program::utxo::UtxoMeta;
-use arch_sdk::{prepare_fees, ArchRpcClient, BitcoinHelper, Config};
+use arch_sdk::{prepare_fees, ArchError, ArchRpcClient, BitcoinHelper, Config};
 use bitcoin::key::{Secp256k1, UntweakedKeypair};
 use bitcoin::{Address, XOnlyPublicKey};
 use borsh::BorshDeserialize;
@@ -72,7 +71,7 @@ pub fn generate_new_keypair() -> (UntweakedKeypair, Pubkey, Address) {
     (key_pair, pubkey, address)
 }
 
-pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData> {
+pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData, ArchError> {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
 
@@ -80,8 +79,9 @@ pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData
 
     let mut account_info_data = account_info.data.as_slice();
 
-    let account_counter = CounterData::deserialize(&mut account_info_data)
-        .map_err(|e| anyhow!(format!("Error corrupted account data {}", e.to_string())))?;
+    let account_counter = CounterData::deserialize(&mut account_info_data).map_err(|e| {
+        ArchError::ProgramError(format!("Error corrupted account data {}", e.to_string()))
+    })?;
 
     Ok(account_counter)
 }

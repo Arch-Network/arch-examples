@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use anyhow::Result;
 use arch_program::compute_budget;
 use arch_program::sanitized::ArchMessage;
 use arch_program::system_instruction::anchor;
@@ -28,7 +27,7 @@ pub struct CreateAccountParams {
 ///
 /// # Returns
 /// * `Result<()>` - Success or error status of the account creation
-pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
+pub fn create_new_account(program_id: Pubkey, name: String) -> std::io::Result<()> {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
     let bitcoin_helper = BitcoinHelper::new(&config);
@@ -74,12 +73,28 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
 
     // Step 2: Retrieve a Bitcoin transaction that will be used for fee calculation
     // This ensures the transaction has appropriate fees for processing
-    let tx_hex = hex::decode(prepare_fees())?;
+    let tx_hex = hex::decode(prepare_fees()).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("hex decode error: {}", e),
+        )
+    })?;
 
     // Step 3: Package all the parameters needed for account creation
     let params = CreateAccountParams {
         name,
-        utxo: UtxoMeta::from(hex::decode(txid)?.try_into().unwrap(), vout),
+        utxo: UtxoMeta::from(
+            hex::decode(txid)
+                .map_err(|e| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!("hex decode error: {}", e),
+                    )
+                })?
+                .try_into()
+                .unwrap(),
+            vout,
+        ),
         tx_hex,
     };
 
@@ -95,7 +110,12 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> Result<()> {
             },
             AccountMeta::new(payer_pubkey, true),
         ],
-        data: borsh::to_vec(&params)?, // Serialize the parameters into bytes
+        data: borsh::to_vec(&params).map_err(|e| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("borsh serialize error: {}", e),
+            )
+        })?, // Serialize the parameters into bytes
     };
 
     // Step 5: Sign and send the instruction to the network

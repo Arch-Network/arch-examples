@@ -7,13 +7,13 @@ use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, ArchRpcClient, BitcoinHelper, Config,
+    build_and_sign_transaction, generate_new_keypair, ArchError, ArchRpcClient, BitcoinHelper,
+    Config,
 };
 use bitcoin::key::Keypair;
 use bitcoin::XOnlyPublicKey;
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use anyhow::{anyhow, Result};
 use tracing::{debug, error};
 
 pub(crate) fn start_new_counter(
@@ -21,7 +21,7 @@ pub(crate) fn start_new_counter(
     step: u16,
     initial_value: u16,
     fee_payer_keypair: &Keypair,
-) -> Result<(Pubkey, Keypair)> {
+) -> Result<(Pubkey, Keypair), ArchError> {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
 
@@ -121,7 +121,9 @@ pub(crate) fn start_new_counter(
 
         debug!("Account info found within account {:?}", account_info);
 
-        return Err(anyhow!("Account content after initialization is wrong !"));
+        return Err(ArchError::ProgramError(
+            "Account content after initialization is wrong !".to_string(),
+        ));
     }
 
     println!("\x1b[32m Step 3/3 Successful :\x1b[0m Counter succesfully initialized \x1b[1m\x1B[34mCounter Data : Step {} ======= Value {}\x1b[0m",account_counter.current_step, account_counter.current_value);
