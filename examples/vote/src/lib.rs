@@ -14,9 +14,9 @@ mod tests {
             state::{VoteInit, VoteState},
         },
     };
+    use arch_sdk::blocking::ArchRpcClient;
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, is_parity_even, ArchRpcClient, Config,
-        Status,
+        build_and_sign_transaction, generate_new_keypair, is_parity_even, Config, Status,
     };
 
     use serial_test::serial;
@@ -53,6 +53,7 @@ mod tests {
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn initialize_vote_account(
         client: &ArchRpcClient,
         user_pubkey: &Pubkey,

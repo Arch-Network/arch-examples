@@ -11,7 +11,8 @@ mod tests {
         system_instruction,
         vote::{program::VOTE_PROGRAM_ID, state::VoteState},
     };
-    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config};
+    use arch_sdk::blocking::ArchRpcClient;
+    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, Config};
     use serial_test::serial;
 
     #[ignore]

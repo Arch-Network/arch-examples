@@ -6,10 +6,8 @@ use arch_program::sanitized::ArchMessage;
 use arch_program::system_instruction;
 use arch_program::utxo::UtxoMeta;
 
-use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, ArchError, ArchRpcClient, BitcoinHelper,
-    Config,
-};
+use arch_sdk::blocking::{ArchRpcClient, BitcoinHelper};
+use arch_sdk::{build_and_sign_transaction, generate_new_keypair, ArchError, Config};
 use bitcoin::key::Keypair;
 use bitcoin::XOnlyPublicKey;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -33,7 +31,7 @@ pub(crate) fn start_new_counter(
 
     let (account_key_pair, account_pubkey, _) = generate_new_keypair(config.network);
 
-    let helper = BitcoinHelper::new(&config);
+    let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
 
     let (txid, vout) = helper.send_utxo(account_pubkey).unwrap();
 

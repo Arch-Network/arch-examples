@@ -6,10 +6,8 @@ use arch_program::system_instruction::anchor;
 use arch_program::{
     account::AccountMeta, instruction::Instruction, pubkey::Pubkey, utxo::UtxoMeta,
 };
-use arch_sdk::{
-    build_and_sign_transaction, prepare_fees, with_secret_key_file, ArchRpcClient, BitcoinHelper,
-    Config, Status,
-};
+use arch_sdk::blocking::{prepare_fees, ArchRpcClient, BitcoinHelper};
+use arch_sdk::{build_and_sign_transaction, with_secret_key_file, Config, Status};
 use borsh::BorshSerialize;
 
 #[derive(BorshSerialize)]
@@ -30,7 +28,7 @@ pub struct CreateAccountParams {
 pub fn create_new_account(program_id: Pubkey, name: String) -> std::io::Result<()> {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
-    let bitcoin_helper = BitcoinHelper::new(&config);
+    let bitcoin_helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
 
     let (account_keypair, account_pubkey) = with_secret_key_file(".test_account.json")?;
     let (payer_keypair, payer_pubkey) = with_secret_key_file(".test_account.json")?;
@@ -62,7 +60,7 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> std::io::Result<(
 
     // Step 1: Create and send a UTXO (Unspent Transaction Output) to the new account
     // This UTXO will be used to fund the account creation
-    let helper = BitcoinHelper::new(&config);
+    let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
     let (txid, vout) = helper.send_utxo(account_pubkey).unwrap();
     println!(
         "UTXO created - txid: {}, vout: {}, pubkey: {}",
@@ -73,7 +71,10 @@ pub fn create_new_account(program_id: Pubkey, name: String) -> std::io::Result<(
 
     // Step 2: Retrieve a Bitcoin transaction that will be used for fee calculation
     // This ensures the transaction has appropriate fees for processing
-    let tx_hex = hex::decode(prepare_fees()).map_err(|e| {
+    let tx_hex = hex::decode(
+        prepare_fees().map_err(|e| std::io::Error::other(format!("prepare_fees failed: {}", e)))?,
+    )
+    .map_err(|e| {
         std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             format!("hex decode error: {}", e),

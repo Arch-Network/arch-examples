@@ -5,12 +5,12 @@ pub mod secp256k1_signature_tests {
     use arch_program::account::AccountMeta;
     use arch_program::instruction::Instruction;
     use arch_program::sanitized::ArchMessage;
+    use arch_sdk::blocking::ArchRpcClient;
+    use arch_sdk::blocking::ProgramDeployer;
     use arch_sdk::build_and_sign_transaction;
     use arch_sdk::generate_new_keypair;
     use arch_sdk::with_secret_key_file;
-    use arch_sdk::ArchRpcClient;
     use arch_sdk::Config;
-    use arch_sdk::ProgramDeployer;
     use arch_sdk::Status;
     use borsh::{BorshDeserialize, BorshSerialize};
 

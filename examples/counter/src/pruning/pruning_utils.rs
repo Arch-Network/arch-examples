@@ -1,7 +1,8 @@
 use std::{thread::sleep, time::Duration};
 
 use arch_program::{pubkey::Pubkey, utxo::UtxoMeta};
-use arch_sdk::{ArchRpcClient, Result};
+use arch_sdk::blocking::ArchRpcClient;
+use arch_sdk::Result;
 
 pub fn wait_for_blocks(client: &ArchRpcClient, num_blocks: u64) {
     let start_height = client

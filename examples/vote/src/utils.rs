@@ -8,7 +8,8 @@ use arch_program::{
     },
     pubkey::Pubkey,
 };
-use arch_sdk::{ArchRpcClient, Config};
+use arch_sdk::blocking::ArchRpcClient;
+use arch_sdk::Config;
 use hex::decode;
 
 pub(crate) fn get_peer_keypair_from_file(peer_number: u8) -> Keypair {

@@ -1,7 +1,8 @@
 use arch_program::sanitized::ArchMessage;
+use arch_sdk::blocking::{ArchRpcClient, ProgramDeployer};
 use arch_sdk::{
-    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient, Config,
-    ProgramDeployer, RollbackStatus, Status,
+    build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, RollbackStatus,
+    Status,
 };
 use serial_test::serial;
 

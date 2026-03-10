@@ -7,9 +7,8 @@ mod whitelist_tests {
     use arch_program::vote::instruction::{add_peer_to_whitelist, remove_peer_from_whitelist};
     use arch_program::vote::validator_state::SharedValidatorState;
     use arch_program::{pubkey::Pubkey, sanitized::ArchMessage};
-    use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
-    };
+    use arch_sdk::blocking::ArchRpcClient;
+    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, Config, Status};
     use serial_test::serial;
 
     fn add_validator_to_whitelist(

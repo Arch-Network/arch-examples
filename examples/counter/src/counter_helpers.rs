@@ -1,6 +1,7 @@
 use arch_program::pubkey::Pubkey;
 use arch_program::utxo::UtxoMeta;
-use arch_sdk::{prepare_fees, ArchError, ArchRpcClient, BitcoinHelper, Config};
+use arch_sdk::blocking::{prepare_fees, ArchRpcClient, BitcoinHelper};
+use arch_sdk::{ArchError, Config};
 use bitcoin::key::{Secp256k1, UntweakedKeypair};
 use bitcoin::{Address, XOnlyPublicKey};
 use borsh::BorshDeserialize;
@@ -79,18 +80,17 @@ pub(crate) fn get_account_counter(account_pubkey: &Pubkey) -> Result<CounterData
 
     let mut account_info_data = account_info.data.as_slice();
 
-    let account_counter = CounterData::deserialize(&mut account_info_data).map_err(|e| {
-        ArchError::ProgramError(format!("Error corrupted account data {}", e.to_string()))
-    })?;
+    let account_counter = CounterData::deserialize(&mut account_info_data)
+        .map_err(|e| ArchError::ProgramError(format!("Error corrupted account data {}", e)))?;
 
     Ok(account_counter)
 }
 
 pub(crate) fn generate_anchoring(account_pubkey: &Pubkey) -> (UtxoMeta, Vec<u8>) {
-    let helper = BitcoinHelper::new(&Config::localnet());
+    let helper = BitcoinHelper::new(&Config::localnet()).expect("Failed to create BitcoinHelper");
     let (utxo_txid, utxo_vout) = helper.send_utxo(*account_pubkey).unwrap();
 
-    let fees_psbt = prepare_fees();
+    let fees_psbt = prepare_fees().expect("prepare_fees failed");
 
     (
         UtxoMeta::from(

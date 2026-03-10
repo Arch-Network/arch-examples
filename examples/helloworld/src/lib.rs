@@ -6,9 +6,9 @@ mod tests {
     use arch_program::sanitized::ArchMessage;
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
+    use arch_sdk::blocking::{prepare_fees, ArchRpcClient, BitcoinHelper, ProgramDeployer};
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, prepare_fees, with_secret_key_file,
-        ArchRpcClient, BitcoinHelper, Config, ProgramDeployer, Status,
+        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
     use borsh::{BorshDeserialize, BorshSerialize};
     use serial_test::serial;
@@ -102,7 +102,7 @@ mod tests {
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let bitcoin_helper = BitcoinHelper::new(&config);
+        let bitcoin_helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
         let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
@@ -145,7 +145,7 @@ mod tests {
                     ],
                     data: borsh::to_vec(&HelloWorldParams {
                         name: "arch".to_string(),
-                        tx_hex: hex::decode(prepare_fees()).unwrap(),
+                        tx_hex: hex::decode(prepare_fees().expect("prepare_fees failed")).unwrap(),
                     })
                     .unwrap(),
                 }],
@@ -230,7 +230,7 @@ mod tests {
 
         /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
 
-        let bitcoin_helper = BitcoinHelper::new(&config);
+        let bitcoin_helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
 
         let (_txid, _vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 

@@ -8,9 +8,8 @@ pub(crate) mod shared_validator_state_tests {
             instruction::initialize_shared_validator_account, validator_state::SharedValidatorState,
         },
     };
-    use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
-    };
+    use arch_sdk::blocking::ArchRpcClient;
+    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, Config, Status};
 
     use crate::utils::get_bootnode_keypair_from_file;
 
@@ -47,8 +46,8 @@ pub(crate) mod shared_validator_state_tests {
                     &user_keypair,
                     &user_pubkey,
                     &bootnode_compressed_pubkey,
-                    &vec![],
-                    &vec![],
+                    &[],
+                    &[],
                 );
             }
         }
@@ -59,8 +58,8 @@ pub(crate) mod shared_validator_state_tests {
         user_keypair: &Keypair,
         user_pubkey: &Pubkey,
         bootnode_pubkey: &[u8; 33],
-        serialized_pubkey_package: &Vec<u8>,
-        whitelist: &Vec<[u8; 33]>,
+        serialized_pubkey_package: &[u8],
+        whitelist: &[[u8; 33]],
     ) {
         let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);
 

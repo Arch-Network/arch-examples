@@ -2,10 +2,8 @@
 use arch_program::sanitized::ArchMessage;
 
 use arch_program::instruction::Instruction;
-use arch_sdk::{
-    build_and_sign_transaction, with_secret_key_file, ArchRpcClient, Config, ProgramDeployer,
-    Status,
-};
+use arch_sdk::blocking::{ArchRpcClient, ProgramDeployer};
+use arch_sdk::{build_and_sign_transaction, with_secret_key_file, Config, Status};
 
 pub const ELF_PATH: &str =
     "./program/target/sbpf-solana-solana/release/test_sol_log_data_program.so";

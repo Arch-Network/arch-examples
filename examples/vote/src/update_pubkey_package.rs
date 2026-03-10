@@ -6,9 +6,8 @@ mod update_pubkey_package_tests {
         sanitized::ArchMessage,
         vote::{instruction::update_pubkey_package, validator_state::SharedValidatorState},
     };
-    use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, ArchRpcClient, Config, Status,
-    };
+    use arch_sdk::blocking::ArchRpcClient;
+    use arch_sdk::{build_and_sign_transaction, generate_new_keypair, Config, Status};
 
     use serial_test::serial;
     #[ignore]

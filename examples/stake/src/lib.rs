@@ -11,9 +11,9 @@ mod stake_tests {
         account::AccountMeta, program_pack::Pack, pubkey::Pubkey, sanitized::ArchMessage,
         utxo::UtxoMeta,
     };
+    use arch_sdk::blocking::{ArchRpcClient, BitcoinHelper, ProgramDeployer};
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
-        BitcoinHelper, Config, ProgramDeployer, Status,
+        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
     use bitcoin::key::Keypair;
     use borsh::{BorshDeserialize, BorshSerialize};
@@ -101,7 +101,7 @@ mod stake_tests {
 
         // generate mint keypair and transfer utxos to it
         let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
-        let helper = BitcoinHelper::new(&config);
+        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
         let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
 
         // find stake account and transfer utxos to it
@@ -198,6 +198,7 @@ mod stake_tests {
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_ata(
         client: &ArchRpcClient,
         bitcoin_helper: &BitcoinHelper,
@@ -255,6 +256,7 @@ mod stake_tests {
         associated_account_address
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn mint_to(
         client: &ArchRpcClient,
         bitcoin_network: bitcoin::Network,
@@ -296,6 +298,7 @@ mod stake_tests {
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn initialize(
         client: &ArchRpcClient,
         bitcoin_network: bitcoin::Network,
@@ -345,6 +348,7 @@ mod stake_tests {
         assert_eq!(stake_account_info.owner, program_pubkey);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn stake(
         client: &ArchRpcClient,
         bitcoin_network: bitcoin::Network,
@@ -407,6 +411,7 @@ mod stake_tests {
         assert_eq!(user_ata_balance, 0);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn unstake(
         client: &ArchRpcClient,
         bitcoin_network: bitcoin::Network,

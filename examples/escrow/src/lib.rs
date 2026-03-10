@@ -8,9 +8,9 @@ mod tests {
         account::AccountMeta, program_pack::Pack, pubkey::Pubkey, rent::minimum_rent,
         sanitized::ArchMessage, utxo::UtxoMeta,
     };
+    use arch_sdk::blocking::{ArchRpcClient, BitcoinHelper, ProgramDeployer};
     use arch_sdk::{
-        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, ArchRpcClient,
-        BitcoinHelper, Config, ProgramDeployer, Status,
+        build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
 
     use bitcoin::key::Keypair;
@@ -30,6 +30,7 @@ mod tests {
         pub token_b_wanted_amount: u64,
     }
 
+    #[allow(dead_code)]
     #[derive(BorshDeserialize, BorshSerialize, Debug)]
     pub struct Offer {
         /// Unique identifier for the offer
@@ -91,7 +92,7 @@ mod tests {
         let offer_seeds = &[b"offer", maker_pubkey.as_ref(), &id.to_le_bytes()];
         let expected_offer_pda = Pubkey::find_program_address(offer_seeds, &program_pubkey);
 
-        let helper = BitcoinHelper::new(&config);
+        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
 
         let (offer_txid, offer_vout) = helper.send_utxo(expected_offer_pda.0).unwrap();
         let offer_utxo = UtxoMeta::from(
@@ -168,7 +169,7 @@ mod tests {
         let config = Config::localnet();
 
         let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
-        let helper = BitcoinHelper::new(&config);
+        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
         let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
         let mint_utxo = UtxoMeta::from(
             hex::decode(mint_txid.clone()).unwrap().try_into().unwrap(),
@@ -244,7 +245,7 @@ mod tests {
             )
             .0;
 
-        let helper = BitcoinHelper::new(&test_config);
+        let helper = BitcoinHelper::new(&test_config).expect("Failed to create BitcoinHelper");
         let (txid, vout) = helper.send_utxo(associated_account_address).unwrap();
 
         let accounts: Vec<AccountMeta> = vec![
@@ -282,6 +283,7 @@ mod tests {
         associated_account_address
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn make_offer(
         maker_pubkey: Pubkey,
         maker_keypair: Keypair,
@@ -355,6 +357,7 @@ mod tests {
         assert!(processed_tx.status == Status::Processed);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn take_offer(
         maker_ata_b: Pubkey,
         taker_ata_a: Pubkey,
