@@ -30,23 +30,6 @@ mod tests {
         pub token_b_wanted_amount: u64,
     }
 
-    #[allow(dead_code)]
-    #[derive(BorshDeserialize, BorshSerialize, Debug)]
-    pub struct Offer {
-        /// Unique identifier for the offer
-        pub id: u64,
-        /// Public key of the user who created the offer
-        pub maker: Pubkey,
-        /// Public key of the mint for token A
-        pub token_mint_a: Pubkey,
-        /// Public key of the mint for token B
-        pub token_mint_b: Pubkey,
-        /// Amount of token B wanted in exchange
-        pub token_b_wanted_amount: u64,
-        /// The bump seed for the offer's Program Derived Address
-        pub bump: u8,
-    }
-
     #[derive(BorshSerialize, BorshDeserialize, Debug)]
     enum EscrowInstruction {
         /// Create a new offer to exchange tokens
