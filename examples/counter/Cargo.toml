@@ -1,11 +1,11 @@
 [package]
 name = "counter"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 
 [dependencies]
-arch_sdk = "0.6.3"
-arch_program = "0.6.3"
+arch_sdk = "0.6.4"
+arch_program = "0.6.4"
 bip322 = "0.0.9"
 
 bitcoincore-rpc = "0.19.0"
