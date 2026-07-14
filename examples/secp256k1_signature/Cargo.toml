@@ -4,8 +4,8 @@ version.workspace = true
 edition = "2021"
 
 [dependencies]
-arch_sdk = "0.6.6"
-arch_program = "0.6.6"
+arch_sdk = "0.6.7"
+arch_program = "0.6.7"
 
 bip322 = "0.0.9"
 bitcoincore-rpc = "0.19.0"
