@@ -35,7 +35,7 @@ mod tests {
         let (authority_keypair, _, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&authority_keypair)
+            .create_and_fund_program_authority_with_faucet(&authority_keypair)
             .unwrap();
 
         let deployer = ProgramDeployer::new(&config);
@@ -73,7 +73,7 @@ mod tests {
 
         let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
         client
-            .create_and_fund_account_with_faucet(&authority_keypair)
+            .create_and_fund_program_authority_with_faucet(&authority_keypair)
             .unwrap();
 
         let deployer = ProgramDeployer::new(&config);
@@ -201,7 +201,7 @@ mod tests {
             with_secret_key_file(".caller.json").expect("getting caller info should not fail");
 
         client
-            .create_and_fund_account_with_faucet(&authority_keypair)
+            .create_and_fund_program_authority_with_faucet(&authority_keypair)
             .unwrap();
 
         let deployer = ProgramDeployer::new(&config);

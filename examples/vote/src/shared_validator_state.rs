@@ -1,11 +1,13 @@
 #[cfg(test)]
 pub(crate) mod shared_validator_state_tests {
     use arch_program::{
+        account::{SHARED_VALIDATOR_DATA_ACCOUNT_ID, SHARED_VALIDATOR_STAGING_ACCOUNT_ID},
         bitcoin::key::Keypair,
         pubkey::Pubkey,
         sanitized::ArchMessage,
         vote::{
-            instruction::initialize_shared_validator_account, validator_state::SharedValidatorState,
+            instruction::initialize_shared_validator_account_chunk,
+            validator_state::SharedValidatorState,
         },
     };
     use arch_sdk::blocking::ArchRpcClient;
@@ -14,7 +16,7 @@ pub(crate) mod shared_validator_state_tests {
     use crate::utils::get_bootnode_keypair_from_file;
 
     pub(crate) fn try_to_initialize_shared_validator_account(client: &ArchRpcClient) {
-        let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);
+        let shared_validator_account_pubkey = Pubkey(SHARED_VALIDATOR_DATA_ACCOUNT_ID);
 
         let account_info = client
             .read_account_info(shared_validator_account_pubkey)
@@ -61,13 +63,21 @@ pub(crate) mod shared_validator_state_tests {
         serialized_pubkey_package: &[u8],
         whitelist: &[[u8; 33]],
     ) {
-        let shared_validator_account_pubkey = Pubkey::from_slice(&[2; 32]);
-
-        let initialization_instruction = initialize_shared_validator_account(
+        let shared_validator_account_pubkey = Pubkey(SHARED_VALIDATOR_DATA_ACCOUNT_ID);
+        let shared_validator_staging_pubkey = Pubkey(SHARED_VALIDATOR_STAGING_ACCOUNT_ID);
+        let serialized_state = SharedValidatorState::new(
+            bootnode_pubkey.to_vec(),
+            serialized_pubkey_package.to_vec(),
+            whitelist.iter().map(|pubkey| pubkey.to_vec()).collect(),
+        )
+        .serialize();
+        let initialization_instruction = initialize_shared_validator_account_chunk(
+            &shared_validator_staging_pubkey,
             &shared_validator_account_pubkey,
-            bootnode_pubkey,
-            serialized_pubkey_package,
-            whitelist,
+            true,
+            true,
+            0,
+            serialized_state,
         );
 
         let tx = build_and_sign_transaction(

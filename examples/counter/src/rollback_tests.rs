@@ -141,7 +141,7 @@ fn single_utxo_rbf_two_accounts() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
@@ -289,7 +289,7 @@ fn single_utxo_rbf_three_accounts() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
@@ -487,7 +487,7 @@ fn rbf_orphan_arch_txs() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
@@ -682,7 +682,7 @@ fn rbf_reorg() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =

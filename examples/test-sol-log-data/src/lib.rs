@@ -23,7 +23,7 @@ fn test_sol_log_data() {
     let (authority_keypair, authority_pubkey) =
         with_secret_key_file(AUTHORITY_FILE_PATH).expect("getting caller info should not fail");
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);

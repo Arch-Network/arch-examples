@@ -82,7 +82,7 @@ mod stake_tests {
         let (user_keypair, user_pubkey, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&user_keypair)
+            .create_and_fund_program_authority_with_faucet(&user_keypair)
             .unwrap();
 
         let (program_keypair, _) =

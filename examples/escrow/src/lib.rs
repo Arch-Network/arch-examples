@@ -51,7 +51,7 @@ mod tests {
         let (maker_keypair, maker_pubkey, _) = generate_new_keypair(config.network);
 
         client
-            .create_and_fund_account_with_faucet(&maker_keypair)
+            .create_and_fund_program_authority_with_faucet(&maker_keypair)
             .unwrap();
 
         let (program_keypair, _) =

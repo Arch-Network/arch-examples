@@ -33,7 +33,7 @@ fn counter_initialization_test() {
     let config = Config::localnet();
     let client = ArchRpcClient::new(&config);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -68,7 +68,7 @@ fn counter_init_and_inc_test() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let account_info = client.read_account_info(authority_pubkey).unwrap();
@@ -154,7 +154,7 @@ fn counter_init_and_inc_transaction_test() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -225,7 +225,7 @@ fn counter_init_and_inc_block_test() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -316,7 +316,7 @@ fn counter_init_and_inc_anchored() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);

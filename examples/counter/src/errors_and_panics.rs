@@ -33,7 +33,7 @@ fn counter_inc_single_instruction_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -103,7 +103,7 @@ fn counter_inc_single_instruction_panic() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -173,7 +173,7 @@ fn counter_inc_two_instructions_1st_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -253,7 +253,7 @@ fn counter_inc_two_instructions_2nd_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -339,7 +339,7 @@ fn counter_inc_two_instructions_1st_panic() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -419,7 +419,7 @@ fn counter_inc_two_instructions_2nd_panic() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -499,7 +499,7 @@ fn counter_inc_two_transactions_1st_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -600,7 +600,7 @@ fn counter_inc_two_transactions_2nd_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -700,7 +700,7 @@ fn counter_inc_two_transactions_1st_panic() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
 
     let deployer = ProgramDeployer::new(&config);
@@ -801,7 +801,7 @@ fn counter_inc_two_transactions_2nd_panic() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -897,7 +897,7 @@ fn counter_init_and_inc_anchored_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -976,7 +976,7 @@ fn counter_init_and_inc_anchored_fail_inc_state() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -1068,7 +1068,7 @@ fn counter_init_and_two_inc_anchored_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -1158,7 +1158,7 @@ fn counter_init_and_two_inc_second_anchored_fail() {
 
     let (authority_keypair, authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&authority_keypair)
         .unwrap();
     let deployer = ProgramDeployer::new(&config);
     let program_pubkey = deployer
@@ -1260,7 +1260,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_succeed() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
@@ -1416,7 +1416,7 @@ fn counter_init_and_two_inc_tx_anchored_fail_2nd_state_only_succeed() {
 
     let (first_authority_keypair, first_authority_pubkey, _) = generate_new_keypair(config.network);
     client
-        .create_and_fund_account_with_faucet(&first_authority_keypair)
+        .create_and_fund_program_authority_with_faucet(&first_authority_keypair)
         .unwrap();
 
     let (second_authority_keypair, second_authority_pubkey, _) =
