@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "apl-associated-token-account"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "apl-token",
  "arch_program",
@@ -21,7 +21,7 @@ dependencies = [
 
 [[package]]
 name = "apl-token"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "arch_program",
  "arrayref",
@@ -52,7 +52,7 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "arch-titan-types-core",
  "base64",
