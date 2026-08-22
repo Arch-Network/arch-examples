@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.8.2"
+version = "0.8.4"
 dependencies = [
  "arch-titan-types-core",
  "base64",
