@@ -6,8 +6,7 @@ use arch_program::{
     program::{invoke, invoke_signed, next_account_info},
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction::create_account_with_anchor,
-    utxo::UtxoMeta,
+    system_instruction::create_account,
     rent::minimum_rent,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -36,10 +35,6 @@ pub enum StakeInstruction {
     Initialize {
         // Minimum time tokens must be staked
         lockup_duration: u64,
-        // UTXO for mint account creation
-        mint_utxo: UtxoMeta,
-        // UTXO for stake account creation
-        stake_utxo: UtxoMeta,
     },
     // Stake tokens
     Stake {
@@ -76,10 +71,8 @@ fn process_instruction(
 
     match instruction {
         StakeInstruction::Initialize {
-            lockup_duration,
-            mint_utxo,
-            stake_utxo,
-        } => process_initialize(program_id, accounts, lockup_duration, mint_utxo, stake_utxo),
+            lockup_duration, ..
+        } => process_initialize(program_id, accounts, lockup_duration),
         StakeInstruction::Stake { amount } => process_stake(program_id, accounts, amount),
         StakeInstruction::Unstake { amount } => process_unstake(program_id, accounts, amount),
         StakeInstruction::ClaimRewards => process_claim_rewards(program_id, accounts),
@@ -91,8 +84,6 @@ fn process_initialize(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     lockup_duration: u64,
-    mint_utxo: UtxoMeta,
-    stake_utxo: UtxoMeta,
 ) -> Result<(), ProgramError> {
     let account_info_iter = &mut accounts.iter();
     let owner = next_account_info(account_info_iter)?;
@@ -106,17 +97,12 @@ fn process_initialize(
 
     // create mint
     invoke(
-        &create_account_with_anchor(
+        &create_account(
             owner.key,
             token_mint.key,
             minimum_rent(apl_token::state::Mint::LEN),
             apl_token::state::Mint::LEN as u64,
             token_program.key,
-            mint_utxo
-                .txid()
-                .try_into()
-                .map_err(|_| ProgramError::InvalidInstructionData)?,
-            mint_utxo.vout(),
         ),
         &[token_mint.clone(), owner.clone(), system_program.clone()],
     )?;
@@ -166,17 +152,12 @@ fn process_initialize(
 
     // Create account using CPI
     invoke_signed(
-        &create_account_with_anchor(
+        &create_account(
             owner.key,
             stake_account.key,
             minimum_rent(serialized_stake_data.len()),
             serialized_stake_data.len() as u64,
             program_id,
-            stake_utxo
-                .txid()
-                .try_into()
-                .map_err(|_| ProgramError::InvalidInstructionData)?,
-            stake_utxo.vout(),
         ),
         &[stake_account.clone(), owner.clone()],
         &[stake_account_seeds],

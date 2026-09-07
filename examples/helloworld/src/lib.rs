@@ -6,7 +6,7 @@ mod tests {
     use arch_program::sanitized::ArchMessage;
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
-    use arch_sdk::blocking::{prepare_fees, ArchRpcClient, BitcoinHelper, ProgramDeployer};
+    use arch_sdk::blocking::{prepare_fees, ArchRpcClient, ProgramDeployer};
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
@@ -95,26 +95,14 @@ mod tests {
         let (first_account_keypair, first_account_pubkey, _address) =
             generate_new_keypair(config.network);
 
-        // println!(
-        //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-        //    "https://mempool.dev.aws.archnetwork.xyz/address/http://localhost:9002/"
-        // );
-
-        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
-
-        let bitcoin_helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
-        let (txid, vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
-
         let transaction = build_and_sign_transaction(
             ArchMessage::new(
-                &[system_instruction::create_account_with_anchor(
+                &[system_instruction::create_account(
                     &authority_pubkey,
                     &first_account_pubkey,
                     minimum_rent(0),
                     0,
                     &program_pubkey,
-                    hex::decode(txid).unwrap().try_into().unwrap(),
-                    vout,
                 )],
                 Some(authority_pubkey),
                 client.get_best_finalized_block_hash().unwrap(),
@@ -131,7 +119,7 @@ mod tests {
 
         assert!(matches!(processed_tx.status, Status::Processed));
 
-        println!("\x1b[32m Step 2/3 Successful :\x1b[0m Arch Account successfully created",);
+        println!("\x1b[32m Step 1/2 Successful :\x1b[0m Arch Account successfully created",);
 
         /* ---------- CALLING HELLO WORLD PROGRAM WITH THE CREATED ACCOUNT ---------- */
 
@@ -171,13 +159,10 @@ mod tests {
             "Hello arch"
         );
 
-        assert_eq!(
-            format!("{}:0", processed_tx.bitcoin_txid.unwrap()),
-            account_info.utxo
-        );
+        assert!(processed_tx.bitcoin_txid.is_some());
 
         println!(
-            "\x1b[32m Step 3/3 Successful :\x1b[0m Hello World program call was successful ! ",
+            "\x1b[32m Step 2/2 Successful :\x1b[0m Hello World program call was successful ! ",
         );
 
         println!(
@@ -221,18 +206,6 @@ mod tests {
 
         let (first_account_keypair, first_account_pubkey, _address) =
             generate_new_keypair(config.network);
-        // create_and_fund_account_with_faucet(&authority_keypair, BITCOIN_NETWORK);
-
-        // println!(
-        //     "\x1b[32m Step 1/3 Successful :\x1b[0m BTC Transaction for account UTXO successfully sent : {} ",
-        //    "https://mempool.dev.aws.archnetwork.xyz/address/http://localhost:9002/"
-        // );
-
-        /* --------------------- CREATING A HELLO WORLD ACCOUNT --------------------- */
-
-        let bitcoin_helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
-
-        let (_txid, _vout) = bitcoin_helper.send_utxo(first_account_pubkey).unwrap();
 
         let transaction = build_and_sign_transaction(
             ArchMessage::new(

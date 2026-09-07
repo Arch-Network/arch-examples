@@ -6,9 +6,9 @@ mod tests {
     use crate::ELF_PATH;
     use arch_program::{
         account::AccountMeta, program_pack::Pack, pubkey::Pubkey, rent::minimum_rent,
-        sanitized::ArchMessage, utxo::UtxoMeta,
+        sanitized::ArchMessage,
     };
-    use arch_sdk::blocking::{ArchRpcClient, BitcoinHelper, ProgramDeployer};
+    use arch_sdk::blocking::{ArchRpcClient, ProgramDeployer};
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
@@ -20,8 +20,6 @@ mod tests {
     pub struct MakeOffer {
         /// The bump seed for the offer's Program Derived Address
         pub offer_bump_seed: u8,
-        /// The UTXO metadata associated with this offer
-        pub offer_utxo: UtxoMeta,
         /// Unique identifier for the offer
         pub id: u64,
         /// Amount of token A being offered
@@ -75,14 +73,6 @@ mod tests {
         let offer_seeds = &[b"offer", maker_pubkey.as_ref(), &id.to_le_bytes()];
         let expected_offer_pda = Pubkey::find_program_address(offer_seeds, &program_pubkey);
 
-        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
-
-        let (offer_txid, offer_vout) = helper.send_utxo(expected_offer_pda.0).unwrap();
-        let offer_utxo = UtxoMeta::from(
-            hex::decode(offer_txid.clone()).unwrap().try_into().unwrap(),
-            offer_vout,
-        );
-
         let vault = create_ata(
             maker_pubkey,
             expected_offer_pda.0,
@@ -98,7 +88,6 @@ mod tests {
             mint_b,
             vault,
             expected_offer_pda,
-            offer_utxo,
             id,
             program_pubkey,
             client.clone(),
@@ -152,25 +141,15 @@ mod tests {
         let config = Config::localnet();
 
         let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
-        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
-        let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
-        let mint_utxo = UtxoMeta::from(
-            hex::decode(mint_txid.clone()).unwrap().try_into().unwrap(),
-            mint_vout,
-        );
 
         let message = ArchMessage::new(
-            &[
-                arch_program::system_instruction::create_account_with_anchor(
-                    payer,
-                    &mint_pubkey,
-                    minimum_rent(apl_token::state::Mint::LEN),
-                    apl_token::state::Mint::LEN as u64,
-                    &apl_token::id(),
-                    mint_utxo.txid().try_into().unwrap(),
-                    mint_utxo.vout(),
-                ),
-            ],
+            &[arch_program::system_instruction::create_account(
+                payer,
+                &mint_pubkey,
+                minimum_rent(apl_token::state::Mint::LEN),
+                apl_token::state::Mint::LEN as u64,
+                &apl_token::id(),
+            )],
             Some(*payer),
             client.get_best_finalized_block_hash().unwrap(),
         );
@@ -228,28 +207,18 @@ mod tests {
             )
             .0;
 
-        let helper = BitcoinHelper::new(&test_config).expect("Failed to create BitcoinHelper");
-        let (txid, vout) = helper.send_utxo(associated_account_address).unwrap();
-
-        let accounts: Vec<AccountMeta> = vec![
-            AccountMeta::new(funder_address, true),
-            AccountMeta::new(associated_account_address, false),
-            AccountMeta::new(wallet_address, false),
-            AccountMeta::new(token_mint_address, false),
-            AccountMeta::new(Pubkey::system_program(), false),
-            AccountMeta::new(apl_token::id(), false),
-        ];
-        let mut data = Vec::with_capacity(36); // 32 bytes for txid + 4 bytes for vout
-        data.extend_from_slice(txid.as_bytes());
-        data.extend_from_slice(&vout.to_le_bytes());
-
         let create_ata_tx = build_and_sign_transaction(
             ArchMessage::new(
-                &[arch_program::instruction::Instruction {
-                    program_id: apl_associated_token_account::id(),
-                    accounts,
-                    data,
-                }],
+                &[
+                    apl_associated_token_account::create_associated_token_account(
+                        &funder_address,
+                        &associated_account_address,
+                        &wallet_address,
+                        &token_mint_address,
+                        &apl_token::id(),
+                        &Pubkey::system_program(),
+                    ),
+                ],
                 Some(funder_address),
                 client.get_best_finalized_block_hash().unwrap(),
             ),
@@ -274,7 +243,6 @@ mod tests {
         mint_b: Pubkey,
         vault: Pubkey,
         expected_offer_pda: (Pubkey, u8),
-        offer_utxo: UtxoMeta,
         id: u64,
         program_pubkey: Pubkey,
         client: ArchRpcClient,
@@ -301,7 +269,6 @@ mod tests {
 
         let make_offer = MakeOffer {
             offer_bump_seed: expected_offer_pda.1,
-            offer_utxo,
             id,
             token_a_offered_amount: 100,
             token_b_wanted_amount: 100,

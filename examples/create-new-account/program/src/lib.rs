@@ -1,16 +1,20 @@
 use arch_program::{
     account::AccountInfo,
-    bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
+    bitcoin::{
+        self, absolute::LockTime, transaction::Version, Amount, OutPoint, ScriptBuf, Sequence,
+        Transaction, TxIn, TxOut, Witness,
+    },
     entrypoint,
-    helper::add_state_transition,
     input_to_sign::InputToSign,
     msg,
-    program::{invoke, next_account_info, set_transaction_to_sign},
+    program::{
+        get_account_script_pubkey, get_bitcoin_tx_output_value, invoke, next_account_info,
+        set_transaction_to_sign,
+    },
     program_error::ProgramError,
     pubkey::Pubkey,
     rent::minimum_rent,
     system_instruction,
-    system_instruction::sign_input,
     system_program::SYSTEM_PROGRAM_ID,
     utxo::UtxoMeta,
 };
@@ -29,7 +33,7 @@ pub struct FactoryState {
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct CreateAccountParams {
     pub name: String,    // Identifier for the account
-    pub utxo: UtxoMeta,  // UTXO information for funding
+    pub utxo: UtxoMeta,  // Output paid to the factory state account's address, spent by this call
     pub tx_hex: Vec<u8>, // Bitcoin transaction for fees
 }
 
@@ -54,14 +58,12 @@ pub fn process_instruction<'a>(
     // Step 3: Create the new account using Cross-Program Invocation (CPI)
     // This calls the system program to actually create the account
     invoke(
-        &system_instruction::create_account_with_anchor(
+        &system_instruction::create_account(
             &payer.key,
             &new_account.key,
             minimum_rent(0),
             0,
             &SYSTEM_PROGRAM_ID,
-            params.utxo.txid().try_into().unwrap(),
-            params.utxo.vout(),
         ),
         &[payer.clone(), new_account.clone()],
     )?;
@@ -90,24 +92,36 @@ pub fn process_instruction<'a>(
         .copy_from_slice(&borsh::to_vec(&state).map_err(map_io_error)?);
 
     // Step 6: Prepare and sign the Bitcoin transaction
-    // Create a new transaction with necessary parameters
-    let mut tx = Transaction {
+    // Spend the UTXO paid to the factory state account's address (input 0), paying its value
+    // back to that address, and add the fee input.
+    let utxo_value = get_bitcoin_tx_output_value(params.utxo.txid_big_endian(), params.utxo.vout())
+        .ok_or(ProgramError::InvalidArgument)?;
+    let tx = Transaction {
         version: Version::TWO,
         lock_time: LockTime::ZERO,
-        input: vec![],
-        output: vec![],
+        input: vec![
+            TxIn {
+                previous_output: OutPoint {
+                    txid: params.utxo.to_txid(),
+                    vout: params.utxo.vout(),
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: Sequence::MAX,
+                witness: Witness::new(),
+            },
+            fees_tx.input[0].clone(),
+        ],
+        output: vec![TxOut {
+            value: Amount::from_sat(utxo_value),
+            script_pubkey: ScriptBuf::from_bytes(
+                get_account_script_pubkey(factory_state_account.key).to_vec(),
+            ),
+        }],
     };
-
-    // Add fee payer
-    add_state_transition(&mut tx, payer)?;
-
-    // Add state transition and fee information
-    add_state_transition(&mut tx, factory_state_account)?;
-    tx.input.push(fees_tx.input[0].clone());
 
     // Create the transaction signing request
     let inputs = [InputToSign {
-        index: 1,
+        index: 0,
         signer: factory_state_account.key.clone(),
     }];
 
@@ -120,9 +134,6 @@ pub fn process_instruction<'a>(
 
     // Step 7: Queue the transaction for signing
     set_transaction_to_sign(accounts, &tx, &inputs)?;
-
-    let ix = sign_input(0, payer.key);
-    invoke(&ix, &[payer.clone()])?;
 
     Ok(())
 }

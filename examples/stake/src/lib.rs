@@ -9,9 +9,8 @@ mod stake_tests {
     use arch_program::hash::Hash;
     use arch_program::{
         account::AccountMeta, program_pack::Pack, pubkey::Pubkey, sanitized::ArchMessage,
-        utxo::UtxoMeta,
     };
-    use arch_sdk::blocking::{ArchRpcClient, BitcoinHelper, ProgramDeployer};
+    use arch_sdk::blocking::{ArchRpcClient, ProgramDeployer};
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
@@ -24,10 +23,6 @@ mod stake_tests {
         Initialize {
             // Minimum time tokens must be staked
             lockup_duration: u64,
-            // UTXO for mint account creation
-            mint_utxo: UtxoMeta,
-            // UTXO for stake account creation
-            stake_utxo: UtxoMeta,
         },
         // Stake tokens
         Stake {
@@ -99,32 +94,14 @@ mod stake_tests {
             )
             .unwrap();
 
-        // generate mint keypair and transfer utxos to it
         let (mint_keypair, mint_pubkey, _) = generate_new_keypair(config.network);
-        let helper = BitcoinHelper::new(&config).expect("Failed to create BitcoinHelper");
-        let (mint_txid, mint_vout) = helper.send_utxo(mint_pubkey).unwrap();
-
-        // find stake account and transfer utxos to it
         let stake_account =
             find_stake_account_address(&user_pubkey, &mint_pubkey, &program_pubkey).0;
-        let (stake_txid, stake_vout) = helper.send_utxo(stake_account).unwrap();
-
-        // create utxo meta for mint and stake account
-        let mint_utxo = UtxoMeta::from(
-            hex::decode(mint_txid.clone()).unwrap().try_into().unwrap(),
-            mint_vout,
-        );
-        let stake_utxo = UtxoMeta::from(
-            hex::decode(stake_txid.clone()).unwrap().try_into().unwrap(),
-            stake_vout,
-        );
 
         // initialize ix
         initialize(
             &client,
             config.network,
-            mint_utxo,
-            stake_utxo,
             user_pubkey,
             user_keypair,
             mint_keypair,
@@ -137,7 +114,6 @@ mod stake_tests {
         // create token accounts
         let user_ata = create_ata(
             &client,
-            &helper,
             config.network,
             user_pubkey,
             user_pubkey,
@@ -147,7 +123,6 @@ mod stake_tests {
         );
         let stake_token_account = create_ata(
             &client,
-            &helper,
             config.network,
             user_pubkey,
             stake_account,
@@ -201,7 +176,6 @@ mod stake_tests {
     #[allow(clippy::too_many_arguments)]
     pub fn create_ata(
         client: &ArchRpcClient,
-        bitcoin_helper: &BitcoinHelper,
         bitcoin_network: bitcoin::Network,
         funder_address: Pubkey,
         wallet_address: Pubkey,
@@ -217,29 +191,18 @@ mod stake_tests {
             )
             .0;
 
-        let (txid, vout) = bitcoin_helper
-            .send_utxo(associated_account_address)
-            .unwrap();
-
-        let accounts: Vec<AccountMeta> = vec![
-            AccountMeta::new(funder_address, true),
-            AccountMeta::new(associated_account_address, false),
-            AccountMeta::new(wallet_address, false),
-            AccountMeta::new(token_mint_address, false),
-            AccountMeta::new(Pubkey::system_program(), false),
-            AccountMeta::new(apl_token::id(), false),
-        ];
-        let mut data = Vec::with_capacity(36); // 32 bytes for txid + 4 bytes for vout
-        data.extend_from_slice(txid.as_bytes());
-        data.extend_from_slice(&vout.to_le_bytes());
-
         let create_ata_tx = build_and_sign_transaction(
             ArchMessage::new(
-                &[arch_program::instruction::Instruction {
-                    program_id: apl_associated_token_account::id(),
-                    accounts,
-                    data,
-                }],
+                &[
+                    apl_associated_token_account::create_associated_token_account(
+                        &funder_address,
+                        &associated_account_address,
+                        &wallet_address,
+                        &token_mint_address,
+                        &apl_token::id(),
+                        &Pubkey::system_program(),
+                    ),
+                ],
                 Some(funder_address),
                 recent_blockhash,
             ),
@@ -302,8 +265,6 @@ mod stake_tests {
     pub fn initialize(
         client: &ArchRpcClient,
         bitcoin_network: bitcoin::Network,
-        mint_utxo: UtxoMeta,
-        stake_utxo: UtxoMeta,
         user_pubkey: Pubkey,
         user_keypair: Keypair,
         mint_keypair: Keypair,
@@ -312,12 +273,8 @@ mod stake_tests {
         program_pubkey: Pubkey,
         recent_blockhash: Hash,
     ) {
-        let serialized_initialize_input = borsh::to_vec(&StakeInstruction::Initialize {
-            lockup_duration: 0,
-            mint_utxo,
-            stake_utxo,
-        })
-        .unwrap();
+        let serialized_initialize_input =
+            borsh::to_vec(&StakeInstruction::Initialize { lockup_duration: 0 }).unwrap();
 
         let initialize_stake_tx = build_and_sign_transaction(
             ArchMessage::new(

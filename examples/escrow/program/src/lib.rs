@@ -5,8 +5,7 @@ use arch_program::{
     program_error::ProgramError,
     program_pack::Pack,
     pubkey::Pubkey,
-    system_instruction::create_account_with_anchor,
-    utxo::UtxoMeta,
+    system_instruction::create_account,
     rent::minimum_rent,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -15,8 +14,6 @@ use borsh::{BorshDeserialize, BorshSerialize};
 pub struct MakeOffer {
     /// The bump seed for the offer's Program Derived Address
     pub offer_bump_seed: u8,
-    /// The UTXO metadata associated with this offer
-    pub offer_utxo: UtxoMeta,
     /// Unique identifier for the offer
     pub id: u64,
     /// Amount of token A being offered
@@ -132,18 +129,12 @@ fn process_make_offer(
 
     // create offer PDA
     invoke_signed(
-        &create_account_with_anchor(
+        &create_account(
             maker.key,
             offer_info.key,
             minimum_rent(serialized_offer_data.len()),
             serialized_offer_data.len() as u64,
             program_id,
-            params
-                .offer_utxo
-                .txid()
-                .try_into()
-                .map_err(|_| ProgramError::InvalidInstructionData)?,
-            params.offer_utxo.vout(),
         ),
         &[offer_info.clone(), maker.clone()],
         &[offer_signer_seeds],
