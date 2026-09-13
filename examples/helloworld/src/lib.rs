@@ -6,7 +6,7 @@ mod tests {
     use arch_program::sanitized::ArchMessage;
     use arch_program::{account::AccountMeta, instruction::Instruction, system_instruction};
 
-    use arch_sdk::blocking::{prepare_fees, ArchRpcClient, ProgramDeployer};
+    use arch_sdk::blocking::{ArchRpcClient, ProgramDeployer};
     use arch_sdk::{
         build_and_sign_transaction, generate_new_keypair, with_secret_key_file, Config, Status,
     };
@@ -19,7 +19,6 @@ mod tests {
     #[derive(Clone, BorshSerialize, BorshDeserialize)]
     pub struct HelloWorldParams {
         pub name: String,
-        pub tx_hex: Vec<u8>,
     }
 
     #[ignore]
@@ -95,12 +94,13 @@ mod tests {
         let (first_account_keypair, first_account_pubkey, _address) =
             generate_new_keypair(config.network);
 
+        // The program stores "Hello arch" in the account; fund rent for that size.
         let transaction = build_and_sign_transaction(
             ArchMessage::new(
                 &[system_instruction::create_account(
                     &authority_pubkey,
                     &first_account_pubkey,
-                    minimum_rent(0),
+                    minimum_rent("Hello arch".len()),
                     0,
                     &program_pubkey,
                 )],
@@ -133,7 +133,6 @@ mod tests {
                     ],
                     data: borsh::to_vec(&HelloWorldParams {
                         name: "arch".to_string(),
-                        tx_hex: hex::decode(prepare_fees().expect("prepare_fees failed")).unwrap(),
                     })
                     .unwrap(),
                 }],
@@ -158,8 +157,6 @@ mod tests {
             String::from_utf8(account_info.data.clone()).unwrap(),
             "Hello arch"
         );
-
-        assert!(processed_tx.bitcoin_txid.is_some());
 
         println!(
             "\x1b[32m Step 2/2 Successful :\x1b[0m Hello World program call was successful ! ",

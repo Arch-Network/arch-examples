@@ -1,14 +1,8 @@
 use arch_program::{
     account::AccountInfo,
-    bitcoin::{self, absolute::LockTime, transaction::Version, Transaction},
     entrypoint,
-    helper::add_state_transition,
-    input_to_sign::InputToSign,
     msg,
-    program::{
-        get_account_script_pubkey, get_bitcoin_block_height, next_account_info,
-        set_transaction_to_sign,
-    },
+    program::{get_bitcoin_block_height, next_account_info},
     program_error::ProgramError,
     pubkey::Pubkey,
 };
@@ -44,9 +38,6 @@ pub fn process_instruction<'a>(
     // Deserialize the instruction data into our params struct
     let params: HelloWorldParams = borsh::from_slice(instruction_data).unwrap();
 
-    // Deserialize the Bitcoin transaction that will be used for fees
-    let fees_tx: Transaction = bitcoin::consensus::deserialize(&params.tx_hex).unwrap();
-
     // Create our greeting message
     let new_data = format!("Hello {}", params.name);
 
@@ -56,36 +47,12 @@ pub fn process_instruction<'a>(
         account.realloc(new_data.len(), true)?;
     }
 
-    // Get the script pubkey for this account
-    let script_pubkey = get_account_script_pubkey(account.key);
-    msg!("script_pubkey {:?}", script_pubkey);
-
     // Store our greeting in the account's data
     account
         .data
         .try_borrow_mut()
         .unwrap()
         .copy_from_slice(new_data.as_bytes());
-
-    // Create a new Bitcoin transaction for our state transition
-    let mut tx = Transaction {
-        version: Version::TWO,
-        lock_time: LockTime::ZERO,
-        input: vec![],
-        output: vec![],
-    };
-
-    // Add the state transition and fee information
-    add_state_transition(&mut tx, account);
-    tx.input.push(fees_tx.input[0].clone());
-
-    let inputs = [InputToSign {
-        index: 0,
-        signer: account.key.clone(),
-    }];
-
-    // Submit the transaction for signing
-    set_transaction_to_sign(accounts, &tx, &inputs)?;
 
     Ok(())
 }
@@ -95,6 +62,4 @@ pub fn process_instruction<'a>(
 pub struct HelloWorldParams {
     /// The name to say hello to
     pub name: String,
-    /// Raw Bitcoin transaction for fees
-    pub tx_hex: Vec<u8>,
 }

@@ -1,24 +1,11 @@
 use arch_program::{
-    account::AccountInfo,
-    entrypoint,
-    helper::get_state_transition_tx,
-    input_to_sign::InputToSign,
-    instruction::Instruction,
-    msg,
-    program::{
-        get_account_script_pubkey, get_bitcoin_tx, get_network_xonly_pubkey, invoke,
-        next_account_info, set_return_data, set_transaction_to_sign, validate_utxo_ownership,
-    },
-    program_error::ProgramError,
-    pubkey::Pubkey,
-    transaction_to_sign::TransactionToSign,
-    utxo::UtxoMeta,
+    account::AccountInfo, entrypoint, msg, program::next_account_info,
+    program_error::ProgramError, pubkey::Pubkey,
 };
-use borsh::{BorshDeserialize, BorshSerialize};
 
 entrypoint!(update_data);
 pub fn update_data(
-    program_id: &Pubkey,
+    _program_id: &Pubkey,
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> Result<(), ProgramError> {
