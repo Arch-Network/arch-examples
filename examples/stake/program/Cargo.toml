@@ -9,7 +9,6 @@ edition = "2021"
 [dependencies]
 arch_program = "0.10.0"
 apl-token = { path = "../../../token" , features = ["no-entrypoint"]}
-apl-associated-token-account= { path = "../../../associated-token-account" , features = ["no-entrypoint"]}
 borsh = { version = "1.5.1", features = ["derive"] }
 
 [lib]

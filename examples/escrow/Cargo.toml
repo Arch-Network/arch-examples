@@ -12,11 +12,8 @@ apl-associated-token-account = { path = "../../associated-token-account", featur
 ] }
 
 
-bitcoincore-rpc = "0.18.0"
-hex = "0.4.3"
 borsh = { version = "1.4.0", features = ["derive"] }
 bitcoin = { version = "0.32.3", features = ["serde", "rand"] }
-log = "0.4"
 [dev-dependencies]
 
 [lib]
