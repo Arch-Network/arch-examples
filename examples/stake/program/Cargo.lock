@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "apl-token"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "arch_program",
  "arrayref",
@@ -33,7 +33,7 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "arch-titan-types-core",
  "base64",

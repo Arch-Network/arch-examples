@@ -19,14 +19,13 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.8.5"
+version = "0.11.0"
 dependencies = [
  "arch-titan-types-core",
  "base64",
  "bincode",
  "bitcode",
  "bitcoin",
- "bitcoin-io",
  "bitcoin_slices",
  "borsh",
  "bs58",

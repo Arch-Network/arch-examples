@@ -4,30 +4,19 @@ version = 4
 
 [[package]]
 name = "apl-associated-token-account"
-version = "0.8.9"
+version = "0.11.0"
 dependencies = [
  "apl-token",
  "arch_program",
- "arrayref",
- "bitcoin",
- "bitcoin-io",
- "borsh",
- "bytemuck",
- "num-derive",
- "num-traits",
- "num_enum",
- "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "apl-token"
-version = "0.8.9"
+version = "0.11.0"
 dependencies = [
  "arch_program",
  "arrayref",
  "bitcoin",
- "bitcoin-io",
- "borsh",
  "bytemuck",
  "num-derive",
  "num-traits",
@@ -52,14 +41,13 @@ dependencies = [
 
 [[package]]
 name = "arch_program"
-version = "0.8.9"
+version = "0.11.0"
 dependencies = [
  "arch-titan-types-core",
  "base64",
  "bincode",
  "bitcode",
  "bitcoin",
- "bitcoin-io",
  "bitcoin_slices",
  "borsh",
  "bs58",

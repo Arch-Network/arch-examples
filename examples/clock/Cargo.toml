@@ -4,7 +4,7 @@ version.workspace = true
 edition = "2021"
 
 [dependencies]
-arch_program = "0.10.0"
+arch_program = "0.11.0"
 
 borsh = { version = "1.4.0", features = ["derive"] }
 
