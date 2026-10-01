@@ -2,6 +2,7 @@
 name = "vote-example"
 version.workspace = true
 edition = "2021"
+license.workspace = true
 
 [dependencies]
 arch_sdk = "0.11.0"
