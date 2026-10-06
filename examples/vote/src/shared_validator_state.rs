@@ -25,7 +25,7 @@ pub(crate) mod shared_validator_state_tests {
         match account_info.data.is_empty() {
             false => {
                 let _shared_validator_account =
-                    bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice())
+                    wincode::deserialize::<SharedValidatorState>(account_info.data.as_slice())
                         .unwrap();
 
                 println!(
@@ -100,7 +100,7 @@ pub(crate) mod shared_validator_state_tests {
             .read_account_info(shared_validator_account_pubkey)
             .unwrap();
         let shared_validator_account =
-            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
+            wincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         assert_eq!(
             shared_validator_account,

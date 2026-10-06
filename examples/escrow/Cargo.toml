@@ -5,8 +5,8 @@ edition = "2021"
 license.workspace = true
 
 [dependencies]
-arch_sdk = "0.11.0"
-arch_program = "0.11.0"
+arch_sdk = "0.12.0"
+arch_program = "0.12.0"
 apl-token = { path = "../../token", features = ["no-entrypoint"] }
 apl-associated-token-account = { path = "../../associated-token-account", features = [
     "no-entrypoint",

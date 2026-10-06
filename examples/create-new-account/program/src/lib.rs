@@ -133,7 +133,7 @@ pub fn process_instruction<'a>(
     );
 
     // Step 7: Queue the transaction for signing
-    set_transaction_to_sign(accounts, &tx, &inputs)?;
+    set_transaction_to_sign(&tx, &inputs)?;
 
     Ok(())
 }

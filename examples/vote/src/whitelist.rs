@@ -56,7 +56,7 @@ mod whitelist_tests {
         let account_info = client.read_account_info(shared_validator_pubkey).unwrap();
 
         let shared_validator_state =
-            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
+            wincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         println!(
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"
@@ -109,7 +109,7 @@ mod whitelist_tests {
         let account_info = client.read_account_info(shared_validator_pubkey).unwrap();
 
         let shared_validator_state =
-            bincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
+            wincode::deserialize::<SharedValidatorState>(account_info.data.as_slice()).unwrap();
 
         println!(
             "\x1b[32m Step 3/3 Successful:\x1b[0m Resulting Validator Shared state successfully retrieved"

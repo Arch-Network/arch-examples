@@ -90,7 +90,7 @@ mod tests {
         assert_eq!(processed_txs.status, Status::Processed);
 
         let account_info = client.read_account_info(*vote_pubkey).unwrap();
-        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
+        let vote_account = wincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(
@@ -155,7 +155,7 @@ mod tests {
         println!("Processed tx: {:?}", processed_txs);
 
         let account_info = client.read_account_info(vote_pubkey).unwrap();
-        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
+        let vote_account = wincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(vote_account.authority, new_authority_pubkey);
@@ -212,7 +212,7 @@ mod tests {
         println!("Processed tx: {:?}", processed_txs);
 
         let account_info = client.read_account_info(vote_pubkey).unwrap();
-        let vote_account = bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
+        let vote_account = wincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
         println!("Vote account: {:?}", vote_account);
 
         assert_eq!(vote_account.commission, 10);
@@ -243,7 +243,7 @@ mod tests {
         match client.read_account_info(node_pubkey) {
             Ok(account_info) => {
                 let vote_account =
-                    bincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
+                    wincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
 
                 println!("Vote state already initialized ! {:?}", vote_account);
             }
