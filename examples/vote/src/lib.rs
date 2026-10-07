@@ -79,7 +79,7 @@ mod tests {
                 Some(*user_pubkey),
                 client.get_best_finalized_block_hash().unwrap(),
             ),
-            vec![*user_keypair, *vote_keypair],
+            vec![*user_keypair, *vote_keypair, *node_keypair],
             client.config.network,
         )
         .expect("Failed to build and sign transaction");
@@ -240,7 +240,7 @@ mod tests {
         let serialized_node_pubkey = node_keypair.public_key().x_only_public_key().0.serialize();
         let node_pubkey = Pubkey::from_slice(&serialized_node_pubkey);
 
-        match client.read_account_info(node_pubkey) {
+        match client.read_account_info(vote::program::vote_account_address(&node_pubkey)) {
             Ok(account_info) => {
                 let vote_account =
                     wincode::deserialize::<VoteState>(account_info.data.as_slice()).unwrap();
