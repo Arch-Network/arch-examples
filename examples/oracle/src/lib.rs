@@ -22,11 +22,19 @@ mod tests {
         println!("{:?}", 10044_u64.to_le_bytes());
         println!("{:?}", 10881_u64.to_le_bytes());
 
+        // The RPC endpoint and credentials are no longer hardcoded in source.
+        // They are read from environment variables so no secret is committed
+        // (removed by audit cleanup: leaked dev RPC password was purged from the repo).
+        let rpc_url = std::env::var("BTC_RPC_URL")
+            .unwrap_or_else(|_| "https://bitcoin-node.dev.aws.archnetwork.xyz:18443/wallet/testwallet".to_string());
+        let rpc_user = std::env::var("BTC_RPC_USERNAME").expect("BTC_RPC_USERNAME environment variable must be set");
+        let rpc_password = std::env::var("BTC_RPC_PASSWORD").expect("BTC_RPC_PASSWORD environment variable must be set");
+
         let rpc = Client::new(
-            "https://bitcoin-node.dev.aws.archnetwork.xyz:18443/wallet/testwallet",
+            &rpc_url,
             Auth::UserPass(
-                "bitcoin".to_string(),
-                "428bae8f3c94f8c39c50757fc89c39bc7e6ebc70ebf8f618".to_string(),
+                rpc_user,
+                rpc_password,
             ),
         )
         .unwrap();
